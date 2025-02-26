@@ -1,290 +1,293 @@
+
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart'; // Add this for file picking
+import 'dart:io';
 
 class EditPage extends StatefulWidget {
   @override
-  State<EditPage> createState() => _EditPageState();
+  _EditPageState createState() => _EditPageState();
 }
 
 class _EditPageState extends State<EditPage> {
-  // Controllers for editable fields
-  final TextEditingController firstNameController = TextEditingController(text: 'Radhika');
-  final TextEditingController lastNameController = TextEditingController(text: 'Singh');
-  final TextEditingController contactController = TextEditingController(text: '9843295503');
-  final TextEditingController dobController = TextEditingController(text: '12/08/1998');
-  final TextEditingController ageController = TextEditingController(text: '26');
-  final TextEditingController maritalStatusController = TextEditingController(text: 'Married');
-  final TextEditingController occupationController = TextEditingController(text: 'Teacher');
-  final TextEditingController previousMedicationController = TextEditingController(text: 'Yes');
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _maritalStatusController = TextEditingController();
+  final TextEditingController _occupationController = TextEditingController();
 
-  // Gender value as String (not TextEditingController)
-  String gender = 'Female';
+  String _gender = 'Female';
+  String? _userId;
+  String _previousMedication = 'No';
+  File? _pdfFile; // Store the picked PDF file
 
-  // PDF file path
-  String? selectedFilePath;
+  @override
+  void initState() {
+    super.initState();
+    _checkUserLoggedIn();
+  }
 
-  // Dropdown value for previous medication
-  String previousMedication = 'No';
+  Future<void> _signUpUser() async {
+    final String email = _generateRandomEmail();
+    final String password = _generateSecurePassword();
 
-  // Function to open Date Picker
-  Future<void> _selectDate(BuildContext context) async {
-    DateTime initialDate = DateTime.now();
-    DateTime firstDate = DateTime(1900);
-    DateTime lastDate = DateTime.now();
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
+      _userId = userCredential.user?.uid;
 
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-    );
+      // Store initial user data in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(_userId).set({
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'contact': _contactController.text,
+        'dob': _dobController.text,
+        'age': int.parse(_ageController.text),
+        'maritalStatus': _maritalStatusController.text,
+        'occupation': _occupationController.text,
+        'gender': _gender,
+        'previousMedication': _previousMedication,
+      });
+    } catch (e) {
+      print('Error signing up user: $e');
+    }
+  }
 
-    if (picked != null && picked != initialDate) {
+  Future<void> _checkUserLoggedIn() async {
+    try {
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        _userId = user.uid;
+        await FirebaseFirestore.instance.collection('users').doc(_userId).get().then((documentSnapshot) {
+          if (documentSnapshot.exists) {
+            Map<String, dynamic> data = documentSnapshot.data() as Map<String, dynamic>;
+            setState(() {
+              _firstNameController.text = data['firstName'];
+              _lastNameController.text = data['lastName'];
+              _contactController.text = data['contact'];
+              _dobController.text = data['dob'];
+              _ageController.text = data['age'].toString();
+              _maritalStatusController.text = data['maritalStatus'];
+              _occupationController.text = data['occupation'];
+              _gender = data['gender'];
+              _previousMedication = data['previousMedication'];
+            });
+          }
+        });
+      }
+    } catch (e) {
+      print('Error checking user logged in: $e');
+    }
+  }
+
+  String _generateRandomEmail() {
+    return 'user${DateTime.now().millisecondsSinceEpoch}@email.com';
+  }
+
+  String _generateSecurePassword() {
+    return 'password123';
+  }
+
+  Future<void> _updateUserProfile() async {
+    if (_userId != null) {
+      try {
+        await FirebaseFirestore.instance.collection('users').doc(_userId).update({
+          'firstName': _firstNameController.text,
+          'lastName': _lastNameController.text,
+          'contact': _contactController.text,
+          'dob': _dobController.text,
+          'age': int.parse(_ageController.text),
+          'maritalStatus': _maritalStatusController.text,
+          'occupation': _occupationController.text,
+          'gender': _gender,
+          'previousMedication': _previousMedication,
+        });
+        if (_previousMedication == 'Yes' && _pdfFile != null) {
+          await _uploadPDF(_pdfFile!);
+        }
+      } catch (e) {
+        print('Error updating user profile: $e');
+      }
+    }
+  }
+
+  Future<void> _uploadPDF(File file) async {
+    try {
+      String fileName = 'pdfs/${DateTime.now().millisecondsSinceEpoch}.pdf';
+      await FirebaseStorage.instance.ref(fileName).putFile(file);
+      print('PDF uploaded to Firebase Storage: $fileName');
+    } catch (e) {
+      print('Error uploading PDF: $e');
+    }
+  }
+
+  Future<void> _selectPDF() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+
+    if (result != null) {
       setState(() {
-        dobController.text = DateFormat('dd/MM/yyyy').format(picked); // Format the date as dd/MM/yyyy
-        _calculateAge(picked); // Automatically calculate age based on DOB
+        _pdfFile = File(result.files.single.path!);
       });
     }
   }
 
-  // Function to calculate Age from DOB
-  void _calculateAge(DateTime dob) {
-    DateTime today = DateTime.now();
+  Future<void> _selectDateOfBirth(BuildContext context) async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _dobController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
+        _ageController.text = _calculateAge(pickedDate).toString();
+      });
+    }
+  }
+
+  int _calculateAge(DateTime dob) {
+    final DateTime today = DateTime.now();
     int age = today.year - dob.year;
     if (dob.month > today.month || (dob.month == today.month && dob.day > today.day)) {
       age--;
     }
-    setState(() {
-      ageController.text = age.toString();
-    });
-  }
-
-  // Function to handle file upload
-  Future<void> _pickPDF() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (result != null) {
-      setState(() {
-        selectedFilePath = result.files.single.path;
-      });
-    }
+    return age;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Color.fromRGBO(255, 255, 255, 1),
-        ),
-        child: SingleChildScrollView(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(  // Use SingleChildScrollView to prevent overflow
           child: Column(
             children: [
-              // Profile Title
-              Text(
-                'Profile',
-                style: TextStyle(
-                  color: Color.fromRGBO(6, 1, 62, 1),
-                  fontFamily: 'Inter',
-                  fontSize: 28,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-
-              // Profile Image
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage('lib/images/avatar.png'),
-              ),
-              SizedBox(height: 20),
-
-              // First Name
               TextField(
-                controller: firstNameController,
+                controller: _firstNameController,
                 decoration: InputDecoration(
                   labelText: 'First Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
-
-              // Last Name
+              SizedBox(height: 16),
               TextField(
-                controller: lastNameController,
+                controller: _lastNameController,
                 decoration: InputDecoration(
                   labelText: 'Last Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
-
-              // Contact Number
+              SizedBox(height: 16),
               TextField(
-                controller: contactController,
-                keyboardType: TextInputType.phone,
+                controller: _contactController,
                 decoration: InputDecoration(
-                  labelText: 'Contact Number',
+                  labelText: 'Contact',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
-
-              // Date of Birth and Age side by side
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _selectDate(context), // Open date picker on tap
-                      child: AbsorbPointer(
-                        child: TextField(
-                          controller: dobController,
-                          decoration: InputDecoration(
-                            labelText: 'Date of Birth',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
+              SizedBox(height: 16),
+              GestureDetector(
+                onTap: () => _selectDateOfBirth(context),
+                child: AbsorbPointer(
+                  child: TextField(
+                    controller: _dobController,
+                    decoration: InputDecoration(
+                      labelText: 'Date of Birth',
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: TextField(
-                      controller: ageController,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Age',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              SizedBox(height: 20),
-
-              // Marital Status
+              SizedBox(height: 16),
               TextField(
-                controller: maritalStatusController,
+                controller: _ageController,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Age',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _maritalStatusController,
                 decoration: InputDecoration(
                   labelText: 'Marital Status',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 20),
-
-              // Gender and Occupation side by side
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: gender, // Use the gender String here
-                      decoration: InputDecoration(
-                        labelText: 'Gender',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          gender = newValue!;
-                        });
-                      },
-                      items: ['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: TextField(
-                      controller: occupationController,
-                      decoration: InputDecoration(
-                        labelText: 'Occupation',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-              // Previous Medication Dropdown and File Upload side by side
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Previous Medication Dropdown
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: previousMedication,
-                      decoration: InputDecoration(
-                        labelText: 'Previous Medication',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          previousMedication = newValue!;
-                          if (previousMedication == 'No') {
-                            selectedFilePath = null; // Clear the file if 'No' is selected
-                          }
-                        });
-                      },
-                      items: ['Yes', 'No'].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  SizedBox(width: 20), // Space between dropdown and file upload
-
-                  // File Upload (only enabled if 'Yes' is selected for Previous Medication)
-                  if (previousMedication == 'Yes')
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _pickPDF, // Open the file picker for PDF
-                        child: Text('Upload PDF'),
-                      ),
-                    ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-// Display the selected file name if the file is picked
-              if (previousMedication == 'Yes' && selectedFilePath != null)
-                Text(
-                  'Selected File: ${selectedFilePath!.split('/').last}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              SizedBox(height: 16),
+              TextField(
+                controller: _occupationController,
+                decoration: InputDecoration(
+                  labelText: 'Occupation',
+                  border: OutlineInputBorder(),
                 ),
-
-              // Save Button
-              ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Profile Saved'),
-                      content: Text(
-                          'First Name: ${firstNameController.text}\nLast Name: ${lastNameController.text}\nContact: ${contactController.text}\nDOB: ${dobController.text}\nAge: ${ageController.text}\nMarital Status: ${maritalStatusController.text}\nGender: $gender\nOccupation: ${occupationController.text}\nPrevious Medication: $previousMedication'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _gender,
+                decoration: InputDecoration(
+                  labelText: 'Gender',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _gender = newValue!;
+                  });
                 },
-                child: Text('Save Profile'),
+                items: ['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _previousMedication,
+                decoration: InputDecoration(
+                  labelText: 'Previous Medication',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _previousMedication = newValue!;
+                    if (_previousMedication == 'No') {
+                      _pdfFile = null; // Clear the PDF file if "No" is selected
+                    }
+                  });
+                },
+                items: ['Yes', 'No'].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              if (_previousMedication == 'Yes') ...[
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _selectPDF,
+                  child: Text('Upload PDF'),
+                ),
+                if (_pdfFile != null) Text('PDF selected: ${_pdfFile!.path.split('/').last}')
+              ],
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  if (_userId == null) {
+                    await _signUpUser(); // Create a new user if not already logged in
+                  }
+                  await _updateUserProfile(); // Update profile with new data
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User profile updated')));
+                },
+                child: Text('Update Profile'),
               ),
             ],
           ),
@@ -293,3 +296,288 @@ class _EditPageState extends State<EditPage> {
     );
   }
 }
+
+
+//
+//
+// import 'package:flutter/material.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_storage/firebase_storage.dart';
+// import 'package:intl/intl.dart';
+// import 'package:file_picker/file_picker.dart'; // Add this for file picking
+// import 'dart:io';
+//
+// class EditPage extends StatefulWidget {
+//   @override
+//   _EditPageState createState() => _EditPageState();
+// }
+//
+// class _EditPageState extends State<EditPage> {
+//   final TextEditingController _firstNameController = TextEditingController();
+//   final TextEditingController _lastNameController = TextEditingController();
+//   final TextEditingController _contactController = TextEditingController();
+//   final TextEditingController _dobController = TextEditingController();
+//   final TextEditingController _ageController = TextEditingController();
+//   final TextEditingController _maritalStatusController = TextEditingController();
+//   final TextEditingController _occupationController = TextEditingController();
+//
+//   String _gender = 'Female';
+//   String? _userId;
+//   String _previousMedication = 'No';
+//   File? _pdfFile; // Store the picked PDF file
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _checkUserLoggedIn();
+//   }
+//
+//   Future<void> _signUpUser() async {
+//     final String email = _generateRandomEmail();
+//     final String password = _generateSecurePassword();
+//
+//     try {
+//       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
+//       _userId = userCredential.user?.uid;
+//     } catch (e) {
+//       print('Error signing up user: $e');
+//     }
+//   }
+//
+//   Future<void> _checkUserLoggedIn() async {
+//     try {
+//       final User? user = FirebaseAuth.instance.currentUser;
+//       if (user != null) {
+//         _userId = user.uid;
+//         await FirebaseFirestore.instance.collection('users').doc(_userId).get().then((documentSnapshot) {
+//           if (documentSnapshot.exists) {
+//             Map<String, dynamic> data = documentSnapshot.data() as Map<String, dynamic>;
+//             setState(() {
+//               _firstNameController.text = data['firstName'];
+//               _lastNameController.text = data['lastName'];
+//               _contactController.text = data['contact'];
+//               _dobController.text = data['dob'];
+//               _ageController.text = data['age'].toString();
+//               _maritalStatusController.text = data['maritalStatus'];
+//               _occupationController.text = data['occupation'];
+//               _gender = data['gender'];
+//               _previousMedication = data['previousMedication'];
+//             });
+//           }
+//         });
+//       }
+//     } catch (e) {
+//       print('Error checking user logged in: $e');
+//     }
+//   }
+//
+//   String _generateRandomEmail() {
+//     return 'user${DateTime.now().millisecondsSinceEpoch}@email.com';
+//   }
+//
+//   String _generateSecurePassword() {
+//     return 'password123';
+//   }
+//
+//   Future<void> _updateUserProfile() async {
+//     if (_userId != null) {
+//       try {
+//         await FirebaseFirestore.instance.collection('users').doc(_userId).update({
+//           'firstName': _firstNameController.text,
+//           'lastName': _lastNameController.text,
+//           'contact': _contactController.text,
+//           'dob': _dobController.text,
+//           'age': int.parse(_ageController.text),
+//           'maritalStatus': _maritalStatusController.text,
+//           'occupation': _occupationController.text,
+//           'gender': _gender,
+//           'previousMedication': _previousMedication,
+//         });
+//         if (_previousMedication == 'Yes' && _pdfFile != null) {
+//           await _uploadPDF(_pdfFile!);
+//         }
+//       } catch (e) {
+//         print('Error updating user profile: $e');
+//       }
+//     }
+//   }
+//
+//   Future<void> _uploadPDF(File file) async {
+//     try {
+//       String fileName = 'pdfs/${DateTime.now().millisecondsSinceEpoch}.pdf';
+//       await FirebaseStorage.instance.ref(fileName).putFile(file);
+//       print('PDF uploaded to Firebase Storage: $fileName');
+//     } catch (e) {
+//       print('Error uploading PDF: $e');
+//     }
+//   }
+//
+//   Future<void> _selectPDF() async {
+//     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+//
+//     if (result != null) {
+//       setState(() {
+//         _pdfFile = File(result.files.single.path!);
+//       });
+//     }
+//   }
+//
+//   Future<void> _selectDateOfBirth(BuildContext context) async {
+//     DateTime? pickedDate = await showDatePicker(
+//       context: context,
+//       initialDate: DateTime.now(),
+//       firstDate: DateTime(1900),
+//       lastDate: DateTime.now(),
+//     );
+//
+//     if (pickedDate != null) {
+//       setState(() {
+//         _dobController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
+//         _ageController.text = _calculateAge(pickedDate).toString();
+//       });
+//     }
+//   }
+//
+//   int _calculateAge(DateTime dob) {
+//     final DateTime today = DateTime.now();
+//     int age = today.year - dob.year;
+//     if (dob.month > today.month || (dob.month == today.month && dob.day > today.day)) {
+//       age--;
+//     }
+//     return age;
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: SingleChildScrollView(  // Use SingleChildScrollView to prevent overflow
+//           child: Column(
+//             children: [
+//               TextField(
+//                 controller: _firstNameController,
+//                 decoration: InputDecoration(
+//                   labelText: 'First Name',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               TextField(
+//                 controller: _lastNameController,
+//                 decoration: InputDecoration(
+//                   labelText: 'Last Name',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               TextField(
+//                 controller: _contactController,
+//                 decoration: InputDecoration(
+//                   labelText: 'Contact',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               GestureDetector(
+//                 onTap: () => _selectDateOfBirth(context),
+//                 child: AbsorbPointer(
+//                   child: TextField(
+//                     controller: _dobController,
+//                     decoration: InputDecoration(
+//                       labelText: 'Date of Birth',
+//                       border: OutlineInputBorder(),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               TextField(
+//                 controller: _ageController,
+//                 readOnly: true,
+//                 decoration: InputDecoration(
+//                   labelText: 'Age',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               TextField(
+//                 controller: _maritalStatusController,
+//                 decoration: InputDecoration(
+//                   labelText: 'Marital Status',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               TextField(
+//                 controller: _occupationController,
+//                 decoration: InputDecoration(
+//                   labelText: 'Occupation',
+//                   border: OutlineInputBorder(),
+//                 ),
+//               ),
+//               SizedBox(height: 16),
+//               DropdownButtonFormField<String>(
+//                 value: _gender,
+//                 decoration: InputDecoration(
+//                   labelText: 'Gender',
+//                   border: OutlineInputBorder(),
+//                 ),
+//                 onChanged: (String? newValue) {
+//                   setState(() {
+//                     _gender = newValue!;
+//                   });
+//                 },
+//                 items: ['Male', 'Female', 'Other'].map<DropdownMenuItem<String>>((String value) {
+//                   return DropdownMenuItem<String>(
+//                     value: value,
+//                     child: Text(value),
+//                   );
+//                 }).toList(),
+//               ),
+//               SizedBox(height: 16),
+//               DropdownButtonFormField<String>(
+//                 value: _previousMedication,
+//                 decoration: InputDecoration(
+//                   labelText: 'Previous Medication',
+//                   border: OutlineInputBorder(),
+//                 ),
+//                 onChanged: (String? newValue) {
+//                   setState(() {
+//                     _previousMedication = newValue!;
+//                     if (_previousMedication == 'No') {
+//                       _pdfFile = null; // Clear the PDF file if "No" is selected
+//                     }
+//                   });
+//                 },
+//                 items: ['Yes', 'No'].map<DropdownMenuItem<String>>((String value) {
+//                   return DropdownMenuItem<String>(
+//                     value: value,
+//                     child: Text(value),
+//                   );
+//                 }).toList(),
+//               ),
+//               if (_previousMedication == 'Yes') ...[
+//                 SizedBox(height: 16),
+//                 ElevatedButton(
+//                   onPressed: _selectPDF,
+//                   child: Text('Upload PDF'),
+//                 ),
+//                 if (_pdfFile != null) Text('PDF selected: ${_pdfFile!.path.split('/').last}')
+//               ],
+//               SizedBox(height: 16),
+//               ElevatedButton(
+//                 onPressed: () async {
+//                   await _updateUserProfile();
+//                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User profile updated')));
+//                 },
+//                 child: Text('Update Profile'),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

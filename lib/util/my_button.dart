@@ -15,7 +15,7 @@ class MyButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromRGBO(6, 22, 85, 1.0), // Background color
+        backgroundColor: Color(0xFF078798), // Background color
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0), // Rounded corners
         ),

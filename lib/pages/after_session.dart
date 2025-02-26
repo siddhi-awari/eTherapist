@@ -1,8 +1,12 @@
+import 'package:app/pages/home_page.dart';
 import 'package:app/pages/profile_page.dart';
+import 'package:app/pages/calendar.dart';
+import 'package:app/pages/therapy_page.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'noti_page.dart';
-import 'therapy_page.dart';
 
 class AfterSession extends StatefulWidget {
   @override
@@ -13,24 +17,50 @@ class _AfterSessionState extends State<AfterSession> {
   // Controller for the feedback text input
   TextEditingController feedbackController = TextEditingController();
 
+  // Function to submit feedback to Firestore
+  void _submitFeedback() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && feedbackController.text.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('feedback')
+          .add({
+        'session': 'Session 1', // Customize as needed
+        'feedback': feedbackController.text,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Feedback submitted successfully!')),
+      );
+
+      feedbackController.clear(); // Clear the input field after submission
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter feedback before submitting.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey,
+        backgroundColor: Color(0xFF078798),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.home_filled, color: Colors.black45),
+          icon: const Icon(Icons.home_filled, color: Colors.white),
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ProfilePage()),
+              MaterialPageRoute(builder: (context) => HomePage()),
             );
           },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black45),
+            icon: const Icon(Icons.notifications, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
@@ -41,19 +71,19 @@ class _AfterSessionState extends State<AfterSession> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),  // Add padding around the body content
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,  // Align the text to the left
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Session Completion message in a box
+            // Session Completion message
             Container(
               width: double.infinity,
               height: 80,
               decoration: BoxDecoration(
-                color: Color.fromRGBO(125, 25, 25, 0.1), // Light red background
+                color: Color(0xFF078798).withOpacity(0.7),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: Color.fromRGBO(125, 25, 25, 1), // Red border color
+                  color: Color(0xFF078798),
                   width: 2,
                 ),
               ),
@@ -63,65 +93,60 @@ class _AfterSessionState extends State<AfterSession> {
                   'Session 1 Completed',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color.fromRGBO(125, 25, 25, 1.0),
+                    color: Colors.white,
                     fontFamily: 'Lucida Sans',
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     height: 1,
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 20), // Space between sections
+            SizedBox(height: 20),
 
-            // Feedback section in a box
+            // Feedback section
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Color.fromRGBO(7, 135, 152, 0.1), // Light blue background
+                color: Color.fromRGBO(7, 135, 152, 0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: Color.fromRGBO(7, 135, 152, 1), // Blue border color
+                  color: Color.fromRGBO(7, 135, 152, 1),
                   width: 2,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Feedback title
                   Text(
                     'Feedback',
                     style: TextStyle(
-                      color: Color.fromRGBO(7, 135, 152, 1),
+                      color: Color(0xFF078798),
                       fontFamily: 'Inter',
-                      fontSize: 22,
+                      fontSize: 25,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 10), // Space between feedback title and description
-
-                  // Feedback description
                   Text(
                     'Write about your experience this session',
                     style: TextStyle(
-                      color: Color.fromRGBO(7, 135, 152, 1),
+                      color: Color(0xFF078798),
                       fontFamily: 'Inter',
                       fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: 10), // Space between description and feedback input
+                  SizedBox(height: 10),
 
-                  // TextField to allow user to type their feedback
                   TextField(
                     controller: feedbackController,
-                    maxLines: 4,  // Allow multiple lines
+                    maxLines: 10,
                     decoration: InputDecoration(
-                      hintText: 'Type here', // Placeholder text
+                      hintText: 'Type here',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: Color.fromRGBO(7, 135, 152, 1),
+                          color: Color(0xFF078798),
                           width: 2,
                         ),
                       ),
@@ -136,15 +161,38 @@ class _AfterSessionState extends State<AfterSession> {
                 ],
               ),
             ),
-            SizedBox(height: 20), // Space between sections
+            SizedBox(height: 20),
 
-            // Action buttons (Take another session and Book offline session)
+            // Submit Feedback Button
             Container(
               width: double.infinity,
               height: 56,
               decoration: BoxDecoration(
-                color: Color.fromRGBO(7, 135, 152, 1),
-                borderRadius: BorderRadius.circular(10),
+                color: Color(0xFF078798),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: TextButton(
+                onPressed: _submitFeedback,
+                child: Text(
+                  'Submit Feedback',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Inter',
+                    fontSize: 22,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Other action buttons
+            Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Color(0xFF078798),
+                borderRadius: BorderRadius.circular(25),
               ),
               child: TextButton(
                 onPressed: () {
@@ -158,33 +206,34 @@ class _AfterSessionState extends State<AfterSession> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontFamily: 'K2D',
+                    fontFamily: 'Inter',
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 16), // Space between the buttons
+            SizedBox(height: 16),
             Container(
               width: double.infinity,
               height: 56,
               decoration: BoxDecoration(
-                color: Color.fromRGBO(7, 135, 152, 1),
-                borderRadius: BorderRadius.circular(10),
+                color: Color(0xFF078798),
+                borderRadius: BorderRadius.circular(25),
               ),
               child: TextButton(
                 onPressed: () {
-                  // Action for the button (e.g., navigate to a new page)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CalendarPage()),
+                  );
                 },
                 child: Text(
                   'Book offline session',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontFamily: 'K2D',
+                    fontFamily: 'Inter',
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -196,8 +245,10 @@ class _AfterSessionState extends State<AfterSession> {
   }
 }
 
-
-// import 'package:etherapy/pages/profile_page.dart';
+// import 'package:app/pages/home_page.dart';
+// import 'package:app/pages/profile_page.dart';
+// import 'package:app/pages/calendar.dart';
+// import 'package:app/pages/therapy_page.dart';
 // import 'package:flutter/material.dart';
 //
 // import 'noti_page.dart';
@@ -208,30 +259,32 @@ class _AfterSessionState extends State<AfterSession> {
 // }
 //
 // class _AfterSessionState extends State<AfterSession> {
+//   // Controller for the feedback text input
+//   TextEditingController feedbackController = TextEditingController();
+//
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
-//         backgroundColor: Colors.grey,
+//         backgroundColor: Color(0xFF078798),
 //         elevation: 0,
 //         leading: IconButton(
-//           icon: const Icon(Icons.home_filled, color: Colors.black45),
+//           icon: const Icon(Icons.home_filled, color: Colors.white),
 //           onPressed: () {
 //             Navigator.push(
 //               context,
-//               MaterialPageRoute(builder: (context) => ProfilePage()),
+//               MaterialPageRoute(builder: (context) => HomePage()),
 //             );
 //           },
 //         ),
 //         actions: [
 //           IconButton(
-//             icon: const Icon(Icons.notifications, color: Colors.black45),
+//             icon: const Icon(Icons.notifications, color: Colors.white),
 //             onPressed: () {
 //               Navigator.push(
 //                 context,
 //                 MaterialPageRoute(builder: (context) => NotificationPage()),
 //               );
-//
 //             },
 //           ),
 //         ],
@@ -246,10 +299,10 @@ class _AfterSessionState extends State<AfterSession> {
 //               width: double.infinity,
 //               height: 80,
 //               decoration: BoxDecoration(
-//                 color: Color.fromRGBO(125, 25, 25, 0.1), // Light red background
+//                 color: Color(0xFF078798).withOpacity(0.7),
 //                 borderRadius: BorderRadius.circular(10),
 //                 border: Border.all(
-//                   color: Color.fromRGBO(125, 25, 25, 1), // Red border color
+//                   color: Color(0xFF078798),
 //                   width: 2,
 //                 ),
 //               ),
@@ -259,9 +312,9 @@ class _AfterSessionState extends State<AfterSession> {
 //                   'Session 1 Completed',
 //                   textAlign: TextAlign.center,
 //                   style: TextStyle(
-//                     color: Color.fromRGBO(125, 25, 25, 1.0),
+//                     color: Colors.white,
 //                     fontFamily: 'Lucida Sans',
-//                     fontSize: 24,
+//                     fontSize: 28,
 //                     fontWeight: FontWeight.bold,
 //                     height: 1,
 //                   ),
@@ -288,24 +341,36 @@ class _AfterSessionState extends State<AfterSession> {
 //                   Text(
 //                     'Feedback',
 //                     style: TextStyle(
-//                       color: Color.fromRGBO(7, 135, 152, 1),
+//                       color: Color(0xFF078798),
 //                       fontFamily: 'Inter',
-//                       fontSize: 22,
+//                       fontSize: 25,
 //                       fontWeight: FontWeight.bold,
 //                     ),
 //                   ),
-//                   SizedBox(height: 10), // Space between feedback title and description
 //                   Text(
 //                     'Write about your experience this session',
 //                     style: TextStyle(
-//                       color: Color.fromRGBO(7, 135, 152, 1),
+//                       color: Color(0xFF078798),
 //                       fontFamily: 'Inter',
 //                       fontSize: 16,
 //                     ),
 //                   ),
-//                   SizedBox(height: 10), // Space between description and feedback
-//                   Text(
-//                     'Great session, helped in building confidence....',
+//                   SizedBox(height: 10), // Space between description and feedback input
+//
+//                   TextField(
+//                     controller: feedbackController,
+//                     maxLines: 10,  // Allow multiple lines
+//                     decoration: InputDecoration(
+//                       hintText: 'Type here', // Placeholder text
+//                       border: OutlineInputBorder(
+//                         borderRadius: BorderRadius.circular(10),
+//                         borderSide: BorderSide(
+//                           color: Color(0xFF078798),
+//                           width: 2,
+//                         ),
+//                       ),
+//                       contentPadding: EdgeInsets.all(10),
+//                     ),
 //                     style: TextStyle(
 //                       color: Color.fromRGBO(7, 135, 152, 1),
 //                       fontFamily: 'K2D',
@@ -322,21 +387,23 @@ class _AfterSessionState extends State<AfterSession> {
 //               width: double.infinity,
 //               height: 56,
 //               decoration: BoxDecoration(
-//                 color: Color.fromRGBO(7, 135, 152, 1),
-//                 borderRadius: BorderRadius.circular(10),
+//                 color: Color(0xFF078798),
+//                 borderRadius: BorderRadius.circular(25),
 //               ),
 //               child: TextButton(
 //                 onPressed: () {
-//                   // Action for the button (e.g., navigate to a new page)
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(builder: (context) => TherapyPage()),
+//                   );
 //                 },
 //                 child: Text(
 //                   'Take another session',
 //                   textAlign: TextAlign.center,
 //                   style: TextStyle(
 //                     color: Colors.white,
-//                     fontFamily: 'K2D',
+//                     fontFamily: 'Inter',
 //                     fontSize: 22,
-//                     fontWeight: FontWeight.bold,
 //                   ),
 //                 ),
 //               ),
@@ -346,21 +413,23 @@ class _AfterSessionState extends State<AfterSession> {
 //               width: double.infinity,
 //               height: 56,
 //               decoration: BoxDecoration(
-//                 color: Color.fromRGBO(7, 135, 152, 1),
-//                 borderRadius: BorderRadius.circular(10),
+//                 color: Color(0xFF078798),
+//                 borderRadius: BorderRadius.circular(25),
 //               ),
 //               child: TextButton(
 //                 onPressed: () {
-//                   // Action for the button (e.g., navigate to a new page)
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(builder: (context) => CalendarPage()),
+//                   );
 //                 },
 //                 child: Text(
 //                   'Book offline session',
 //                   textAlign: TextAlign.center,
 //                   style: TextStyle(
 //                     color: Colors.white,
-//                     fontFamily: 'K2D',
+//                     fontFamily: 'Inter',
 //                     fontSize: 22,
-//                     fontWeight: FontWeight.bold,
 //                   ),
 //                 ),
 //               ),
@@ -371,4 +440,3 @@ class _AfterSessionState extends State<AfterSession> {
 //     );
 //   }
 // }
-//

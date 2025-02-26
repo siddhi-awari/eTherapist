@@ -24,15 +24,15 @@ class AppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: 30, left: 30),
+      padding: const EdgeInsets.only(top : 30, left: 30),
       child: Container(
         width: 372,
         height: 61,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: Color.fromRGBO(7, 135, 152, 0.58),
+          color: const Color.fromRGBO(7, 135, 152, 0.58),
           border: Border.all(
-            color: Color.fromRGBO(151, 151, 151, 1),
+            color: const Color.fromRGBO(151, 151, 151, 1),
             width: 1,
           ),
         ),
@@ -43,15 +43,15 @@ class AppointmentCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 name,
-                style: TextStyle(
-                  color: Color.fromRGBO(9, 10, 10, 1),
+                style: const TextStyle(
+                  color: Color.fromRGBO(23, 20, 20, 1.0),
                   fontFamily: 'ADLaM Display',
                   fontSize: 14,
                 ),
               ),
               Row(
                 children: <Widget>[
-                  Text(
+                  const Text(
                     'Date: ',
                     style: TextStyle(
                       color: Color.fromRGBO(9, 10, 10, 1),
@@ -61,14 +61,14 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   Text(
                     date,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color.fromRGBO(9, 10, 10, 1),
                       fontFamily: 'Abyssinica SIL',
                       fontSize: 12,
                     ),
                   ),
-                  Spacer(),
-                  Text(
+                  const Spacer(),
+                  const Text(
                     'Time: ',
                     style: TextStyle(
                       color: Color.fromRGBO(9, 10, 10, 1),
@@ -78,7 +78,7 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   Text(
                     time,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color.fromRGBO(9, 10, 10, 1),
                       fontFamily: 'Abyssinica SIL',
                       fontSize: 12,

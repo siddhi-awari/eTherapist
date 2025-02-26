@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'home_page.dart';
 
-// Appointment class definition
 class Appointment {
   final String time;
 
@@ -10,225 +12,831 @@ class Appointment {
 
 class CalendarPage extends StatefulWidget {
   @override
-  State<CalendarPage> createState() => _CalendarPageState();
+  _CalendarPageState createState() => _CalendarPageState();
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  DateTime _selectedDate = DateTime.now(); // Initially set to current date
-  DateTime _focusedDate = DateTime.now(); // Focus date for calendar
-  Map<String, List<Appointment>> appointments = {
-    '2025-01-09': [
-      Appointment(time: '9:00 AM - 10:30 AM'),
-      Appointment(time: '1:00 PM - 2:30 PM'),
-    ],
-    '2025-01-15': [
-      Appointment(time: '11:00 AM - 12:00 PM'),
-      Appointment(time: '3:00 PM - 4:00 PM'),
-    ],
-    '2025-01-24': [
-      Appointment(time: '9:00 AM - 10:00 AM'),
-      Appointment(time: '12:00 PM - 1:00 PM'),
-    ],
-    '2025-01-31': [
-      Appointment(time: '1:30 PM - 2:30 PM'),
-      Appointment(time: '4:30 PM - 5:30 PM'),
-    ],
-  };
+  DateTime _focusedDate = DateTime.now();
+  DateTime? _selectedDate;
+  Map<DateTime, List<Appointment>> availableAppointments = {};
 
-  // Get appointments for selected date, with a max of 2 appointments
-  List<Appointment> _getAppointmentsForSelectedDate() {
-    String formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
-    return appointments[formattedDate]?.take(2).toList() ?? [];
+  @override
+  void initState() {
+    super.initState();
+    _fetchAvailableSlots();
   }
 
-  // Method to handle date selection
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+  Future<void> _fetchAvailableSlots() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!userDoc.exists || !userDoc.data().toString().contains('assignedDoctorId')) {
+      return;
+    }
+
+    String assignedDoctorId = userDoc['assignedDoctorId'];
+    print("Doctor ID: $assignedDoctorId");
+
+    QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(assignedDoctorId)
+        .collection('slots')
+        .get();
+
+    if (slotSnapshot.docs.isEmpty) {
+      print("No slots found for doctor: $assignedDoctorId");
+    }
+
+    Map<DateTime, List<Appointment>> tempAppointments = {};
+
+    for (var doc in slotSnapshot.docs) {
+      if (doc.data() is Map<String, dynamic>) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        if (data.containsKey('date') && data.containsKey('time')) {
+          String dateString = data['date'];
+          String time = data['time'];
+
+          try {
+            List<String> dateParts = dateString.split('-');
+            DateTime date = DateTime(
+              int.parse(dateParts[0]),
+              int.parse(dateParts[1]),
+              int.parse(dateParts[2]),
+            );
+
+            // Normalize date to remove time component
+            DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+
+            if (!tempAppointments.containsKey(normalizedDate)) {
+              tempAppointments[normalizedDate] = [];
+            }
+            tempAppointments[normalizedDate]!.add(Appointment(time: time));
+          } catch (e) {
+            print("Error parsing date: $dateString - $e");
+          }
+        } else {
+          print("Invalid slot document: $doc");
+        }
+      }
+    }
+
     setState(() {
-      _selectedDate = selectedDay;
-      _focusedDate = focusedDay; // Update focused date for calendar navigation
+      availableAppointments = tempAppointments;
     });
+
+    print("Available slots: $availableAppointments");
+  }
+
+  Future<void> _bookAppointment(Appointment appointment) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || _selectedDate == null) return;
+
+    // Ensure YYYY-MM-DD format
+    String formattedDate =
+        "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('appointments')
+          .add({
+        'date': formattedDate, // Ensures YYYY-MM-DD format
+        'time': appointment.time,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      String assignedDoctorId = userDoc['assignedDoctorId'];
+
+      QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(assignedDoctorId)
+          .collection('slots')
+          .where('date', isEqualTo: formattedDate) // YYYY-MM-DD format
+          .where('time', isEqualTo: appointment.time)
+          .get();
+
+      for (var doc in slotSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      _fetchAvailableSlots();
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Appointment booked for ${appointment.time}'),
+          backgroundColor: Color(0xFF078798),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to book appointment: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Calendar'),
-        backgroundColor: Color.fromRGBO(177, 174, 228, 1.0),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  ClipOval(
-                    child: Image.asset(
-                      'lib/images/avatar.png', // Ensure the image path is correct
-                      width: 70.0,
-                      height: 70.0,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Doctor',
-                    style: TextStyle(
-                      color: Color.fromRGBO(6, 1, 62, 1),
-                      fontFamily: 'Inter',
-                      fontSize: 32,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            TableCalendar(
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2025, 12, 31),
-              focusedDay: _focusedDate,
-              selectedDayPredicate: (day) => isSameDay(day, _selectedDate),
-              onDaySelected: _onDaySelected,
-              calendarFormat: CalendarFormat.month,
-              headerStyle: HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                leftChevronVisible: true,
-                rightChevronVisible: true,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Text(
-                'Upcoming Appointments for ${_selectedDate.toLocal()}'.split(' ')[0],
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  color: Color.fromRGBO(110, 181, 193, 1.0),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            // Display Appointments based on the selected date
-            if (_getAppointmentsForSelectedDate().isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 20, left: 27),
-                child: Text(
-                  'No appointments available for this date.',
-                  style: TextStyle(
-                    color: Color.fromRGBO(110, 181, 193, 1.0),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ..._getAppointmentsForSelectedDate().map(
-                  (appointment) => AppointmentCard(
-                date: _selectedDate.toLocal().toString().split(' ')[0],
-                time: appointment.time,
-              ),
-            ),
-          ],
+        leading: IconButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HomePage()),
+            );
+          },
+          icon: Icon(Icons.home_filled),
+          color: Colors.white,
         ),
+        backgroundColor: const Color(0xFF078798),
+        title: Text('Appointment Booking', style: TextStyle(color: Colors.white)),
       ),
-    );
-  }
-}
-
-class AppointmentCard extends StatefulWidget {
-  final String date;
-  final String time;
-
-  const AppointmentCard({
-    required this.date,
-    required this.time,
-  });
-
-  @override
-  _AppointmentCardState createState() => _AppointmentCardState();
-}
-
-class _AppointmentCardState extends State<AppointmentCard> {
-  bool _isSelected = false;
-
-  // Toggle the selection state
-  void _toggleSelection() {
-    setState(() {
-      _isSelected = !_isSelected;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Container(
-        width: 300,
-        height: 61,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Color.fromRGBO(7, 135, 152, 0.58),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(3.0),
-          child: Row(
-            children: <Widget>[
-              GestureDetector(
-                onTap: _toggleSelection,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isSelected ? Colors.green : Colors.transparent,
-                      border: Border.all(
-                        color: _isSelected ? Colors.green : Colors.black26,
+      body: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2025, 12, 31),
+            focusedDay: _focusedDate,
+            calendarFormat: CalendarFormat.month,
+            selectedDayPredicate: (day) {
+              return _selectedDate != null && isSameDay(_selectedDate, day);
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDate = selectedDay;
+                _focusedDate = focusedDay;
+              });
+            },
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, events) {
+                DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+                if (availableAppointments.containsKey(normalizedDate)) {
+                  return Positioned(
+                    bottom: 1,
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    child: Icon(
-                      _isSelected ? Icons.check_circle : Icons.circle_outlined,
-                      color: _isSelected ? Colors.black26 : Colors.grey,
-                      size: 20,
+                  );
+                }
+                return null;
+              },
+            ),
+          ),
+          SizedBox(height: 20),
+          Text('Available Appointments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: _selectedDate == null ||
+                availableAppointments[DateTime(
+                    _selectedDate!.year, _selectedDate!.month, _selectedDate!.day)] == null
+                ? Center(child: Text('No appointments available for this date.'))
+                : ListView.builder(
+              itemCount: availableAppointments[DateTime(
+                  _selectedDate!.year, _selectedDate!.month, _selectedDate!.day)]?.length ?? 0,
+              itemBuilder: (context, index) {
+                DateTime normalizedDate = DateTime(
+                    _selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+                Appointment appointment = availableAppointments[normalizedDate]![index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    elevation: 5,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.all(16.0),
+                      title: Text(
+                        appointment.time,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      trailing: ElevatedButton(
+                        onPressed: () {
+                          _bookAppointment(appointment);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF078798),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: Text('Book', style: TextStyle(color: Colors.white)),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          'Time: ',
-                          style: TextStyle(
-                            color: Color.fromRGBO(23, 20, 20, 1.0),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          widget.time,
-                          style: TextStyle(
-                            color: Color.fromRGBO(9, 10, 10, 1),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
+
+
+/// marking
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:table_calendar/table_calendar.dart';
+// import 'home_page.dart';
+//
+// class Appointment {
+//   final String time;
+//
+//   Appointment({required this.time});
+// }
+//
+// class CalendarPage extends StatefulWidget {
+//   @override
+//   _CalendarPageState createState() => _CalendarPageState();
+// }
+//
+// class _CalendarPageState extends State<CalendarPage> {
+//   DateTime _focusedDate = DateTime.now();
+//   DateTime? _selectedDate;
+//   Map<DateTime, List<Appointment>> availableAppointments = {};
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchAvailableSlots();
+//   }
+//
+//   Future<void> _fetchAvailableSlots() async {
+//     User? user = FirebaseAuth.instance.currentUser;
+//     if (user == null) return;
+//
+//     DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//         .collection('users')
+//         .doc(user.uid)
+//         .get();
+//
+//     if (!userDoc.exists || !userDoc.data().toString().contains('assignedDoctorId')) {
+//       return;
+//     }
+//
+//     String assignedDoctorId = userDoc['assignedDoctorId'];
+//     print("Doctor ID: $assignedDoctorId");
+//
+//     QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+//         .collection('users')
+//         .doc(assignedDoctorId)
+//         .collection('slots')
+//         .get();
+//
+//     if (slotSnapshot.docs.isEmpty) {
+//       print("No slots found for doctor: $assignedDoctorId");
+//     }
+//
+//     Map<DateTime, List<Appointment>> tempAppointments = {};
+//
+//     for (var doc in slotSnapshot.docs) {
+//       if (doc.data() is Map<String, dynamic>) {
+//         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+//
+//         if (data.containsKey('date') && data.containsKey('time')) {
+//           String dateString = data['date'];
+//           String time = data['time'];
+//
+//           try {
+//             List<String> dateParts = dateString.split('-');
+//             DateTime date = DateTime(
+//               int.parse(dateParts[0]),
+//               int.parse(dateParts[1]),
+//               int.parse(dateParts[2]),
+//             );
+//
+//             // Normalize date to remove time component
+//             DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+//
+//             if (!tempAppointments.containsKey(normalizedDate)) {
+//               tempAppointments[normalizedDate] = [];
+//             }
+//             tempAppointments[normalizedDate]!.add(Appointment(time: time));
+//           } catch (e) {
+//             print("Error parsing date: $dateString - $e");
+//           }
+//         } else {
+//           print("Invalid slot document: $doc");
+//         }
+//       }
+//     }
+//
+//     setState(() {
+//       availableAppointments = tempAppointments;
+//     });
+//
+//     print("Available slots: $availableAppointments");
+//   }
+//
+//   Future<void> _bookAppointment(Appointment appointment) async {
+//     User? user = FirebaseAuth.instance.currentUser;
+//     if (user == null || _selectedDate == null) return;
+//
+//     try {
+//       await FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(user.uid)
+//           .collection('appointments')
+//           .add({
+//         'date': "${_selectedDate!.year}-${_selectedDate!.month}-${_selectedDate!.day}",
+//         'time': appointment.time,
+//         'timestamp': FieldValue.serverTimestamp(),
+//       });
+//
+//       DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(user.uid)
+//           .get();
+//
+//       String assignedDoctorId = userDoc['assignedDoctorId'];
+//
+//       QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(assignedDoctorId)
+//           .collection('slots')
+//           .where('date', isEqualTo: "${_selectedDate!.year}-${_selectedDate!.month}-${_selectedDate!.day}")
+//           .where('time', isEqualTo: appointment.time)
+//           .get();
+//
+//       for (var doc in slotSnapshot.docs) {
+//         await doc.reference.delete();
+//       }
+//
+//       _fetchAvailableSlots();
+//
+//       Navigator.pop(context);
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Appointment booked for ${appointment.time}'),
+//           backgroundColor: Color(0xFF078798),
+//         ),
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Failed to book appointment: $e')),
+//       );
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(builder: (context) => HomePage()),
+//             );
+//           },
+//           icon: Icon(Icons.home_filled),
+//           color: Colors.white,
+//         ),
+//         backgroundColor: const Color(0xFF078798),
+//         title: Text('Appointment Booking', style: TextStyle(color: Colors.white)),
+//       ),
+//       body: Column(
+//         children: [
+//           TableCalendar(
+//             firstDay: DateTime.utc(2020, 1, 1),
+//             lastDay: DateTime.utc(2025, 12, 31),
+//             focusedDay: _focusedDate,
+//             calendarFormat: CalendarFormat.month,
+//             selectedDayPredicate: (day) {
+//               return _selectedDate != null && isSameDay(_selectedDate, day);
+//             },
+//             onDaySelected: (selectedDay, focusedDay) {
+//               setState(() {
+//                 _selectedDate = selectedDay;
+//                 _focusedDate = focusedDay;
+//               });
+//             },
+//             calendarBuilders: CalendarBuilders(
+//               markerBuilder: (context, date, events) {
+//                 DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+//                 if (availableAppointments.containsKey(normalizedDate)) {
+//                   return Positioned(
+//                     bottom: 1,
+//                     child: Container(
+//                       width: 5,
+//                       height: 5,
+//                       decoration: BoxDecoration(
+//                         color: Colors.red,
+//                         shape: BoxShape.circle,
+//                       ),
+//                     ),
+//                   );
+//                 }
+//                 return null;
+//               },
+//             ),
+//           ),
+//           SizedBox(height: 20),
+//           Text('Available Appointments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//           Expanded(
+//             child: _selectedDate == null || availableAppointments[_selectedDate] == null
+//                 ? Center(child: Text('No appointments available for this date.'))
+//                 : ListView.builder(
+//               itemCount: availableAppointments[_selectedDate]!.length,
+//               itemBuilder: (context, index) {
+//                 Appointment appointment = availableAppointments[_selectedDate]![index];
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//                   child: Card(
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(12.0),
+//                     ),
+//                     elevation: 5,
+//                     child: ListTile(
+//                       contentPadding: EdgeInsets.all(16.0),
+//                       title: Text(
+//                         appointment.time,
+//                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//                       ),
+//                       trailing: ElevatedButton(
+//                         onPressed: () {
+//                           _bookAppointment(appointment);
+//                         },
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: Color(0xFF078798),
+//                           shape: RoundedRectangleBorder(
+//                             borderRadius: BorderRadius.circular(8.0),
+//                           ),
+//                         ),
+//                         child: Text('Book', style: TextStyle(color: Colors.white)),
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+//
+
+/// normal
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:table_calendar/table_calendar.dart';
+// import 'home_page.dart';
+//
+// class Appointment {
+//   final String time;
+//
+//   Appointment({required this.time});
+// }
+//
+// class CalendarPage extends StatefulWidget {
+//   @override
+//   _CalendarPageState createState() => _CalendarPageState();
+// }
+//
+// class _CalendarPageState extends State<CalendarPage> {
+//   DateTime _focusedDate = DateTime.now();
+//   DateTime? _selectedDate;
+//
+//   Map<DateTime, List<Appointment>> availableAppointments = {
+//     DateTime(2025, 3, 9): [
+//       Appointment(time: '1:00 PM - 2:30 PM'),
+//       Appointment(time: '3:00 PM - 4:00 PM'),
+//     ],
+//     DateTime(2025, 2, 15): [
+//       Appointment(time: '11:00 AM - 12:00 PM'),
+//       Appointment(time: '2:00 PM - 3:00 PM'),
+//     ],
+//     DateTime(2025, 2, 24): [
+//       Appointment(time: '9:00 AM - 10:00 AM'),
+//       Appointment(time: '1:30 PM - 2:30 PM'),
+//     ],
+//   };
+//
+//   List<Appointment> _getAppointmentsForSelectedDate() {
+//     return availableAppointments.entries
+//         .where((entry) => isSameDay(entry.key, _selectedDate))
+//         .expand((entry) => entry.value)
+//         .toList();
+//   }
+//
+//   Future<void> _bookAppointment(Appointment appointment) async {
+//     User? user = FirebaseAuth.instance.currentUser;
+//
+//     if (user != null && _selectedDate != null) {
+//       try {
+//         await FirebaseFirestore.instance
+//             .collection('users')
+//             .doc(user.uid)
+//             .collection('appointments')
+//             .add({
+//           'date': _selectedDate!.toIso8601String(),
+//           'time': appointment.time,
+//           'timestamp': FieldValue.serverTimestamp(),
+//         });
+//
+//         Navigator.pop(context);
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text('Appointment booked for ${appointment.time}'),
+//             backgroundColor: Color(0xFF078798),
+//           ),
+//         );
+//       } catch (e) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Failed to book appointment: $e')),
+//         );
+//       }
+//     } else {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Please sign in to book an appointment.')),
+//       );
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(builder: (context) => HomePage()),
+//             );
+//           },
+//           icon: Icon(Icons.home_filled),
+//           color: Colors.white,
+//         ),
+//         backgroundColor: const Color(0xFF078798),
+//         title: Text('Appointment Booking', style: TextStyle(color: Colors.white)),
+//       ),
+//       body: Column(
+//         children: [
+//           TableCalendar(
+//             firstDay: DateTime.utc(2020, 1, 1),
+//             lastDay: DateTime.utc(2025, 12, 31),
+//             focusedDay: _focusedDate,
+//             calendarFormat: CalendarFormat.month,
+//             selectedDayPredicate: (day) {
+//               return _selectedDate != null && isSameDay(_selectedDate, day);
+//             },
+//             onDaySelected: (selectedDay, focusedDay) {
+//               setState(() {
+//                 _selectedDate = selectedDay;
+//                 _focusedDate = focusedDay;
+//               });
+//             },
+//             calendarBuilders: CalendarBuilders(
+//               markerBuilder: (context, date, events) {
+//                 if (availableAppointments.containsKey(date)) {
+//                   return Positioned(
+//                     bottom: 1,
+//                     child: Container(
+//                       width: 5,
+//                       height: 5,
+//                       decoration: BoxDecoration(
+//                         color: Colors.red,
+//                         shape: BoxShape.circle,
+//                       ),
+//                     ),
+//                   );
+//                 }
+//                 return null;
+//               },
+//             ),
+//           ),
+//           SizedBox(height: 20),
+//           Text('Available Appointments:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//           Expanded(
+//             child: _getAppointmentsForSelectedDate().isEmpty
+//                 ? Center(child: Text('No appointments available for this date.'))
+//                 : ListView.builder(
+//               itemCount: _getAppointmentsForSelectedDate().length,
+//               itemBuilder: (context, index) {
+//                 Appointment appointment = _getAppointmentsForSelectedDate()[index];
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//                   child: Card(
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(12.0),
+//                     ),
+//                     elevation: 5,
+//                     child: ListTile(
+//                       contentPadding: EdgeInsets.all(16.0),
+//                       title: Text(
+//                         appointment.time,
+//                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//                       ),
+//                       trailing: ElevatedButton(
+//                         onPressed: () {
+//                           _bookAppointment(appointment);
+//                         },
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: Color(0xFF078798),
+//                           shape: RoundedRectangleBorder(
+//                             borderRadius: BorderRadius.circular(8.0),
+//                           ),
+//                         ),
+//                         child: Text('Book', style: TextStyle(color: Colors.white)),
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+//
+//
+
+/// ajfdbaskjdas
+// import 'package:app/pages/home_page.dart';
+// import 'package:flutter/material.dart';
+// import 'package:table_calendar/table_calendar.dart';
+//
+// class Appointment {
+//   final String time;
+//
+//   Appointment({required this.time});
+// }
+//
+// class CalendarPage extends StatefulWidget {
+//   @override
+//   _CalendarPageState createState() => _CalendarPageState();
+// }
+//
+// class _CalendarPageState extends State<CalendarPage> {
+//   DateTime _focusedDate = DateTime.now();
+//   DateTime? _selectedDate;
+//
+//   Map<DateTime, List<Appointment>> availableAppointments = {
+//     DateTime(2025, 3, 9): [
+//       Appointment(time: '1:00 PM - 2:30 PM'),
+//       Appointment(time: '3:00 PM - 4:00 PM'),
+//     ],
+//     DateTime(2025, 2, 15): [
+//       Appointment(time: '11:00 AM - 12:00 PM'),
+//       Appointment(time: '2:00 PM - 3:00 PM'),
+//     ],
+//     DateTime(2025, 2, 24): [
+//       Appointment(time: '9:00 AM - 10:00 AM'),
+//       Appointment(time: '1:30 PM - 2:30 PM'),
+//     ],
+//   };
+//
+//   List<Appointment> _getAppointmentsForSelectedDate() {
+//     return availableAppointments.entries
+//         .where((entry) => isSameDay(entry.key, _selectedDate))
+//         .expand((entry) => entry.value)
+//         .toList();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(onPressed: (){
+//           Navigator.push(
+//             context,
+//             MaterialPageRoute(builder: (context) => HomePage()),
+//           );
+//         }, icon: Icon(Icons.home_filled),color: Colors.white,),
+//         backgroundColor: const Color(0xFF078798),
+//         title: Text('Appointment Booking', style: TextStyle(color: Colors.white)),
+//       ),
+//       body: Column(
+//         children: [
+//           TableCalendar(
+//             firstDay: DateTime.utc(2020, 1, 1),
+//             lastDay: DateTime.utc(2025, 12, 31),
+//             focusedDay: _focusedDate,
+//             calendarFormat: CalendarFormat.month,
+//             selectedDayPredicate: (day) {
+//               return _selectedDate != null && isSameDay(_selectedDate, day);
+//             },
+//             onDaySelected: (selectedDay, focusedDay) {
+//               setState(() {
+//                 _selectedDate = selectedDay;
+//                 _focusedDate = focusedDay;
+//               });
+//             },
+//             calendarBuilders: CalendarBuilders(
+//               markerBuilder: (context, date, events) {
+//                 if (availableAppointments.containsKey(date)) {
+//                   return Positioned(
+//                     bottom: 1,
+//                     child: Container(
+//                       width: 5,
+//                       height: 5,
+//                       decoration: BoxDecoration(
+//                         color: Colors.red,
+//                         shape: BoxShape.circle,
+//                       ),
+//                     ),
+//                   );
+//                 }
+//                 return null;
+//               },
+//             ),
+//           ),
+//           SizedBox(height: 20),
+//           Text('Available Appointments:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//           Expanded(
+//             child: _getAppointmentsForSelectedDate().isEmpty
+//                 ? Center(child: Text('No appointments available for this date.'))
+//                 : ListView.builder(
+//               itemCount: _getAppointmentsForSelectedDate().length,
+//               itemBuilder: (context, index) {
+//                 Appointment appointment = _getAppointmentsForSelectedDate()[index];
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//                   child: Card(
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(12.0),
+//                     ),
+//                     elevation: 5,
+//                     child: ListTile(
+//                       contentPadding: EdgeInsets.all(16.0),
+//                       title: Text(
+//                         appointment.time,
+//                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//                       ),
+//                       trailing: ElevatedButton(
+//                         onPressed: () {
+//                           _bookAppointment(appointment);
+//                         },
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: Color(0xFF078798),
+//                           shape: RoundedRectangleBorder(
+//                             borderRadius: BorderRadius.circular(8.0),
+//                           ),
+//                         ),
+//                         child: Text('Book', style: TextStyle(color: Colors.white)),
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   void _bookAppointment(Appointment appointment) {
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         title: Text('Confirm Booking'),
+//         content: Text('Book appointment at ${appointment.time}?'),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.pop(context),
+//             child: Text('Cancel'),
+//           ),
+//           TextButton(
+//             onPressed: () {
+//               Navigator.pop(context);
+//               ScaffoldMessenger.of(context).showSnackBar(
+//                 SnackBar(
+//                   content: Text('Appointment booked for ${appointment.time}'),
+//                   backgroundColor: Color(0xFF078798),
+//                 ),
+//               );
+//             },
+//             child: Text('Confirm'),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
