@@ -43,7 +43,7 @@ class QuestionTile extends StatelessWidget {
                       value: index,
                       groupValue: selectedOptionIndex,
                       onChanged: onOptionSelected,
-                      activeColor: Colors.blue,
+                      activeColor: Color(0xFF078798),
                     ),
                     Expanded(
                       child: Text(

@@ -21,10 +21,10 @@ class _TherapyPage extends State<TherapyPage> {
               Text(
                 'Choose Therapy Mode',
                 style: TextStyle(
-                  color: Color.fromRGBO(6, 1, 62, 1),
+                  color: Color(0xFF06013F),
                   fontFamily: 'Inter',
                   fontSize: 32,
-                  fontWeight: FontWeight.normal,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(height: 20),
@@ -32,35 +32,27 @@ class _TherapyPage extends State<TherapyPage> {
               Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Color(0xFF078798).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 6, spreadRadius: 3)],
+                  border: Border.all( color: Color(0xFF078798),width: 2,),
                 ),
                 child: Row(
                   children: <Widget>[
-                    Icon(Icons.video_call, size: 40),
+                    Icon(Icons.video_call, size: 40,color: Color(0xFF06013F),),
                     SizedBox(width: 15),
-                    Expanded(  // Ensure Column takes up available space
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
                             'VIRTUAL THERAPY SESSIONS',
                             style: TextStyle(
-                              color: Color.fromRGBO(6, 1, 62, 1),
+                              color: Color(0xFF06013F),
                               fontFamily: 'K2D',
                               fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            softWrap: true,  // Ensures wrapping of text
-                          ),
-                          Text(
-                            'Engage in live therapy sessions with experts online.',
-                            style: TextStyle(
-                              color: Colors.black.withOpacity(0.6),
-                              fontFamily: 'K2D',
-                              fontSize: 16,
-                            ),
-                            softWrap: true,  // Ensures wrapping of text
+                            softWrap: true,
                           ),
                         ],
                       ),
@@ -75,24 +67,25 @@ class _TherapyPage extends State<TherapyPage> {
               TherapyOptionCard(
                 title: 'One-to-One Conversation',
                 description: 'Practice personal interactions to ease social discomfort.',
-                icon: Icons.arrow_forward,
-                onTap: () { Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => consentPage()
-                  ),
-                );},
+                icon: Icons.arrow_circle_right_rounded,
+                onTap:() {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => consentPage()),
+                  );
+                },
+
               ),
               SizedBox(height: 20),
               // Exam Anxiety Scenario Section
               TherapyOptionCard(
                 title: 'Exam Anxiety Scenario',
                 description: 'Simulate test conditions to reduce stress and improve focus.',
-                icon: Icons.arrow_forward,
+                icon: Icons.arrow_circle_right_rounded,
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => consentPage()
-                    ),
+                    MaterialPageRoute(builder: (context) => consentPage()),
                   );
                 },
               ),
@@ -101,7 +94,7 @@ class _TherapyPage extends State<TherapyPage> {
               TherapyOptionCard(
                 title: 'Public Speaking',
                 description: 'Face a virtual audience to overcome fear and boost confidence.',
-                icon: Icons.arrow_forward,
+                icon: Icons.arrow_circle_right_rounded,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -110,98 +103,60 @@ class _TherapyPage extends State<TherapyPage> {
                   );
                 },
               ),
-
               SizedBox(height: 20),
+
 
               Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Color(0xFF078798).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 6, spreadRadius: 3)],
+                  border: Border.all(color: Color(0xFF078798), width: 2),
                 ),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CalendarPage()), // Navigate to CalendarPage
-                    );
-                  },
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.phone, size: 40),
-                      SizedBox(width: 15),
-                      Expanded(  // Ensures Column takes up remaining space in the Row
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              'OFFLINE SESSIONS',
-                              style: TextStyle(
-                                color: Color.fromRGBO(6, 1, 62, 1),
-                                fontFamily: 'K2D',
-                                fontSize: 20,
-                              ),
-                              softWrap: true,  // Allows text to wrap to the next line
-                            ),
-                            Text(
-                              'Book an offline therapy session for personalized support.',
-                              style: TextStyle(
-                                color: Colors.black.withOpacity(0.6),
-                                fontFamily: 'K2D',
-                                fontSize: 16,
-                              ),
-                              softWrap: true,  // Allows text to wrap to the next line
-                            ),
-                          ],
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.phone, size: 40,color: Color(0xFF06013F),),
+                        SizedBox(width: 15),
+                        Text(
+                          'OFFLINE SESSIONS',
+                          style: TextStyle(
+                            color: Color(0xFF06013F),
+                            fontFamily: 'K2D',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          softWrap: true,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CalendarPage()),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Color(0xFF078798),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Text(
+                        'Book Offline Session',
+                        style: TextStyle(fontFamily: 'K2D', fontSize: 16),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-
-              // // Offline Sessions Section
-              // Container(
-              //   padding: EdgeInsets.all(10),
-              //   decoration: BoxDecoration(
-              //     color: Colors.white,
-              //     borderRadius: BorderRadius.circular(8),
-              //     boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), blurRadius: 6, spreadRadius: 3)],
-              //   ),
-              //   child: Row(
-              //     children: <Widget>[
-              //       Icon(Icons.phone, size: 40),
-              //       SizedBox(width: 15),
-              //       Expanded(  // Ensures Column takes up remaining space in the Row
-              //         child: Column(
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: <Widget>[
-              //             Text(
-              //               'OFFLINE SESSIONS',
-              //               style: TextStyle(
-              //                 color: Color.fromRGBO(6, 1, 62, 1),
-              //                 fontFamily: 'K2D',
-              //                 fontSize: 20,
-              //               ),
-              //               softWrap: true,  // Allows text to wrap to the next line
-              //             ),
-              //             Text(
-              //               'Book an offline therapy session for personalized support.',
-              //               style: TextStyle(
-              //                 color: Colors.black.withOpacity(0.6),
-              //                 fontFamily: 'K2D',
-              //                 fontSize: 16,
-              //               ),
-              //               softWrap: true,  // Allows text to wrap to the next line
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
 
             ],
           ),

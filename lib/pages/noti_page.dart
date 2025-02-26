@@ -81,7 +81,7 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: 5.0, left:10.0, right: 10.0),
+      padding: EdgeInsets.only(top: 5.0, left: 10.0, right: 10.0),
       child: Card(
         elevation: 3,
         shape: RoundedRectangleBorder(
@@ -89,11 +89,15 @@ class NotificationCard extends StatelessWidget {
         ),
         color: Colors.white,
         child: Padding(
-          padding:EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
           child: Row(
             children: [
-              Icon(icon, size: 28, color: Colors.blue), // Blue icon color for all cards
-              SizedBox(width: 12), // Spacer between icon and text
+              // Icon
+              Icon(icon, size: 28, color: Colors.blue),
+
+              SizedBox(width: 20), // Space between icon and text column
+
+              // Column for Title and Description
               Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +109,7 @@ class NotificationCard extends StatelessWidget {
                         fontFamily: 'ADLaM Display',
                         fontSize: 16,
                       ),
-                      overflow: TextOverflow.ellipsis,  // Prevent overflow
+                      overflow: TextOverflow.ellipsis, // Prevent overflow
                       maxLines: 1, // Ensure title fits in one line
                     ),
                     Text(
@@ -115,16 +119,23 @@ class NotificationCard extends StatelessWidget {
                         fontFamily: 'Actor',
                         fontSize: 14,
                       ),
-                      overflow: TextOverflow.ellipsis,  // Prevent overflow for description
-                      maxLines: 2, // Limit description to two lines
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2, // Limit description to one line
                     ),
                   ],
                 ),
               ),
+
               Spacer(),
+
+              // Time Text should be on the right side now
               Text(
                 time,
-                style: TextStyle(color: Color.fromRGBO(134, 134, 134, 1), fontFamily: 'SF Pro Display', fontSize: 14),
+                style: TextStyle(
+                  color: Color.fromRGBO(134, 134, 134, 1),
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
