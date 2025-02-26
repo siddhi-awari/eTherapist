@@ -53,8 +53,8 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAYUVgHcPacI13CCJlt-N9q8VKIBxNoMro',
-    appId: '1:50671662761:android:10b177e11d6b5c35395bb8',
+    apiKey: '',
+    appId: '',
     messagingSenderId: '50671662761',
     projectId: 'etherapist-275bc',
     storageBucket: 'etherapist-275bc.firebasestorage.app',
