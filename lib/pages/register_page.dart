@@ -77,7 +77,7 @@ class _RegisterState extends State<Register> {
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
                     children: [
-                      Image.asset('lib/images/Mdd.png', height: 150),
+                      Image.asset('lib/images/Mdd.png', height: 120),
                       Container(
                         width: 155,
                         height: 100.0,

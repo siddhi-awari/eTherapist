@@ -1,40 +1,35 @@
-import 'package:app/pages/patient_list.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'doc_dash.dart';
-import 'doctor_profile_page.dart';
+import 'package:app/pages/appointments_page.dart';
+import 'package:app/pages/quiz_page.dart';
+import 'edit_page.dart';
+import 'mindEx_page.dart';
 import 'noti_page.dart';
-import 'noti_page2.dart';
+import 'profile_page.dart';
+import 'therapy_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+class TherapyPage2 extends StatefulWidget {
+  const TherapyPage2({Key? key}) : super(key: key);
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(MaterialApp(home: MainScreen()));
-}
-
-class MainScreen extends StatefulWidget {
   @override
-  _MainScreenState createState() => _MainScreenState();
+  State<TherapyPage2> createState() => _TherapyPage2();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _TherapyPage2 extends State<TherapyPage2> {
+  int _selectedIndex = 3;
+  String userEmail = '';
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String userEmail = 'No email available';
-  int _currentIndex = 0;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  final List<Widget> _screens = [
-    DoctorDashboard(),
-    PatientsListScreen(),
-    DoctorProfilePage(),
+  final List<Widget> _pages = [
+    QuizPage(),
+    MindExPage(),
+    ProfilePage(),
+    TherapyPage(),
+    EditPage(),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
 
   @override
   void initState() {
@@ -45,14 +40,22 @@ class _MainScreenState extends State<MainScreen> {
   void _fetchUserDetails() async {
     User? user = _auth.currentUser;
     if (user != null) {
+      print("User ID: ${user.uid}");
+      print("User Email: ${user.email}");
+
       setState(() {
         userEmail = user.email ?? 'No email available';
       });
-      print("User ID: \${user.uid}");
-      print("User Email: \$userEmail");
     } else {
       print("No user logged in.");
     }
+  }
+
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
@@ -66,7 +69,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             const Text(
               'eTherapy',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
               userEmail,
@@ -80,37 +83,45 @@ class _MainScreenState extends State<MainScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => NotificationPage2()),
+                MaterialPageRoute(builder: (context) => NotificationPage()),
               );
             },
           ),
         ],
       ),
-      body: _screens[_currentIndex],
+
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: const Color(0xFF078798),
         unselectedItemColor: const Color(0xFF078798),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.quiz),
+            label: 'Quiz',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Patients',
+            icon: Icon(Icons.play_circle),
+            label: 'MindEx',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.apps),
             label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.healing),
+            label: 'Therapy',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.edit),
+            label: 'Edit',
           ),
         ],
       ),
     );
   }
 }
-
-
-
-

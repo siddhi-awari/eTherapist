@@ -37,25 +37,13 @@ class _YouTubePlayerPageState extends State<YouTubePlayerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('YouTube Player'),
-        backgroundColor: Colors.red,
+        title: Text('Mind Exercises'),
+        backgroundColor: const Color(0xFF078798),
       ),
-      body: Column(
-        children: [
-          YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: Colors.amber,
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Enjoy the video!',
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
-        ],
+      body: YoutubePlayer(
+        controller: _controller,
+        showVideoProgressIndicator: true,
+        progressIndicatorColor: Colors.amber,
       ),
     );
   }

@@ -1,7 +1,13 @@
 import 'package:app/pages/calendar.dart';
+import 'package:app/pages/profile_page.dart';
+import 'package:app/pages/quiz_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'consent.dart';
+import 'consent2.dart';
+import 'edit_page.dart';
+import 'mindEx_page.dart';
 
 class TherapyPage extends StatefulWidget {
   @override
@@ -9,6 +15,33 @@ class TherapyPage extends StatefulWidget {
 }
 
 class _TherapyPage extends State<TherapyPage> {
+  String userEmail = "Loading...";
+  int _selectedIndex = 0;  // Add the selected index variable to track which page is active.
+
+  final List<Widget> _pages = [
+    QuizPage(),
+    MindExPage(),
+    ProfilePage(),
+    TherapyPage(),
+    EditPage(),
+  ];
+  Future<void> _fetchUserEmail() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        userEmail = user.email ?? "No Email";
+      });
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,7 +51,7 @@ class _TherapyPage extends State<TherapyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
+              const Text(
                 'Choose Therapy Mode',
                 style: TextStyle(
                   color: Color(0xFF06013F),
@@ -27,7 +60,7 @@ class _TherapyPage extends State<TherapyPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               Container(
                 padding: EdgeInsets.all(10),
@@ -36,7 +69,7 @@ class _TherapyPage extends State<TherapyPage> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all( color: Color(0xFF078798),width: 2,),
                 ),
-                child: Row(
+                child: const Row(
                   children: <Widget>[
                     Icon(Icons.video_call, size: 40,color: Color(0xFF06013F),),
                     SizedBox(width: 15),
@@ -61,7 +94,7 @@ class _TherapyPage extends State<TherapyPage> {
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // One-to-One Conversation Section
               TherapyOptionCard(
@@ -78,18 +111,18 @@ class _TherapyPage extends State<TherapyPage> {
               ),
               SizedBox(height: 20),
               // Exam Anxiety Scenario Section
-              TherapyOptionCard(
-                title: 'Exam Anxiety Scenario',
-                description: 'Simulate test conditions to reduce stress and improve focus.',
-                icon: Icons.arrow_circle_right_rounded,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => consentPage()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
+              // TherapyOptionCard(
+              //   title: 'Exam Anxiety Scenario',
+              //   description: 'Simulate test conditions to reduce stress and improve focus.',
+              //   icon: Icons.arrow_circle_right_rounded,
+              //   onTap: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(builder: (context) => consentPage()),
+              //     );
+              //   },
+              // ),
+              // SizedBox(height: 20),
               // Public Speaking Section
               TherapyOptionCard(
                 title: 'Public Speaking',
@@ -98,7 +131,7 @@ class _TherapyPage extends State<TherapyPage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => consentPage()
+                    MaterialPageRoute(builder: (context) => consentPage2()
                     ),
                   );
                 },
@@ -115,7 +148,7 @@ class _TherapyPage extends State<TherapyPage> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
@@ -186,12 +219,6 @@ class TherapyOptionCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(left: 25.0,),
         child: Container(
-          padding: EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-
           child: Row(
             children: <Widget>[
               Icon(icon, size: 36, color: Color.fromRGBO(7, 135, 152, 1)),

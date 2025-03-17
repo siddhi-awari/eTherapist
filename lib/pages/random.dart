@@ -1,313 +1,362 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// bottomNavigationBar: BottomNavigationBar(
+// currentIndex: 2, // Adjust the index based on your navigation
+// onTap: (index) {
+// // Handle navigation
+// },
+// selectedItemColor: const Color(0xFF078798),
+// unselectedItemColor: const Color(0xFF078798),
+// items: const [
+// BottomNavigationBarItem(
+// icon: Icon(Icons.quiz),
+// label: 'Quiz',
+// ),
+// BottomNavigationBarItem(
+// icon: Icon(Icons.play_circle),
+// label: 'MindEx',
+// ),
+// BottomNavigationBarItem(
+// icon: Icon(Icons.apps),
+// label: 'Profile',
+// ),
+// BottomNavigationBarItem(
+// icon: Icon(Icons.healing),
+// label: 'Therapy',
+// ),
+// BottomNavigationBarItem(
+// icon: Icon(Icons.edit),
+// label: 'Edit',
+// ),
+// ],
+// ),
+//
+/// appp
+// appBar: AppBar(
+// leading: IconButton(
+// onPressed: () {
+// Navigator.push(
+// context,
+// MaterialPageRoute(builder: (context) => HomePage()),  // Ensure navigating back to HomePage
+// );
+// },
+// icon: Icon(Icons.home_filled),
+// color: Colors.white,
+// ),
+//
+// backgroundColor: const Color(0xFF078798),
+// title: Text('Appointment Booking', style: TextStyle(color: Colors.white)),
+// ),
 
-class PatientDetails extends StatelessWidget {
-  final String patientId;
+/// afasdsa
+// import 'package:flutter/material.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+//
+// class PatientDetails extends StatelessWidget {
+//   final String patientId;
+//
+//   const PatientDetails({Key? key, required this.patientId}) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Patient Details'),
+//         backgroundColor: Colors.teal,
+//         elevation: 0,
+//       ),
+//       body: FutureBuilder<DocumentSnapshot>(
+//         future: FirebaseFirestore.instance.collection('users').doc(patientId).get(),
+//         builder: (context, snapshot) {
+//           if (snapshot.connectionState == ConnectionState.waiting) {
+//             return const Center(child: CircularProgressIndicator());
+//           }
+//           if (!snapshot.hasData || !snapshot.data!.exists) {
+//             return const Center(child: Text('Patient data not found.'));
+//           }
+//
+//           final patientData = snapshot.data!.data() as Map<String, dynamic>;
+//
+//           return SingleChildScrollView(
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 _buildHeaderSection(patientData),
+//                 const SizedBox(height: 20),
+//                 _buildInfoSection(patientData),
+//                 const SizedBox(height: 20),
+//                 _buildFeedbackSection(context, patientId),
+//                 const SizedBox(height: 20),
+//                 _buildRecentVisitsSection(context, patientId),
+//               ],
+//             ),
+//           );
+//         },
+//       ),
+//     );
+//   }
+//
+//   Widget _buildHeaderSection(Map<String, dynamic> patientData) {
+//     return Container(
+//       padding: const EdgeInsets.all(16.0),
+//       color: Colors.teal,
+//       child: Row(
+//         children: [
+//           const CircleAvatar(
+//             radius: 40,
+//             backgroundImage: AssetImage('assets/images/patient1.jpg'),
+//           ),
+//           const SizedBox(width: 16),
+//           Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Text(
+//                 patientData['name'] ?? 'Unknown',
+//                 style: const TextStyle(
+//                   fontSize: 20,
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.white,
+//                 ),
+//               ),
+//               const SizedBox(height: 8),
+//               Text(
+//                 'Age: ${patientData['age'] ?? 'N/A'}, ${patientData['gender'] ?? 'N/A'}',
+//                 style: const TextStyle(
+//                   fontSize: 16,
+//                   color: Colors.white70,
+//                 ),
+//               ),
+//               const SizedBox(height: 8),
+//               Text(
+//                 'Occupation: ${patientData['occupation'] ?? 'N/A'}',
+//                 style: const TextStyle(
+//                   fontSize: 16,
+//                   color: Colors.white70,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   Widget _buildInfoSection(Map<String, dynamic> patientData) {
+//     return Card(
+//       margin: const EdgeInsets.symmetric(horizontal: 16),
+//       elevation: 4,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text(
+//               'Patient Information',
+//               style: TextStyle(
+//                 fontSize: 18,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//             const Divider(),
+//             _buildInfoRow('First Name', patientData['firstName'] ?? 'N/A'),
+//             _buildInfoRow('Last Name', patientData['lastName'] ?? 'N/A'),
+//             _buildInfoRow('Email', patientData['email'] ?? 'N/A'),
+//             _buildInfoRow('Contact', patientData['contact'] ?? 'N/A'),
+//             _buildInfoRow('Date of Birth', patientData['dob'] ?? 'N/A'),
+//             _buildInfoRow('Marital Status', patientData['maritalStatus'] ?? 'N/A'),
+//             _buildInfoRow('Previous Medication', patientData['previousMedication'] ?? 'N/A'),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _buildInfoRow(String title, String value) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 8.0),
+//       child: Row(
+//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//         children: [
+//           Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+//           Text(value),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   Widget _buildRecentVisitsSection(BuildContext context, String patientId) {
+//     return Card(
+//       margin: const EdgeInsets.symmetric(horizontal: 16),
+//       elevation: 4,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text(
+//               'Recent Visits',
+//               style: TextStyle(
+//                 fontSize: 18,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//             const Divider(),
+//             StreamBuilder<QuerySnapshot>(
+//               stream: FirebaseFirestore.instance
+//                   .collection('users')
+//                   .doc(patientId)
+//                   .collection('appointments')
+//                   .orderBy('date', descending: true)
+//                   .snapshots(),
+//               builder: (context, snapshot) {
+//                 if (snapshot.connectionState == ConnectionState.waiting) {
+//                   return const Center(child: CircularProgressIndicator());
+//                 }
+//                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+//                   return const Center(child: Text('No recent visits found.'));
+//                 }
+//
+//                 final visits = snapshot.data!.docs;
+//
+//                 return ListView.builder(
+//                   shrinkWrap: true,
+//                   physics: const NeverScrollableScrollPhysics(),
+//                   itemCount: visits.length,
+//                   itemBuilder: (context, index) {
+//                     var visitData = visits[index].data() as Map<String, dynamic>;
+//                     return ListTile(
+//                       leading: const Icon(Icons.calendar_today, color: Colors.teal),
+//                       title: Text(visitData['date'] ?? 'Unknown Date'),
+//                       subtitle: Text(visitData['summary'] ?? 'No details available'),
+//                       trailing: ElevatedButton(
+//                         onPressed: () {
+//                           Navigator.push(
+//                             context,
+//                             MaterialPageRoute(
+//                               builder: (context) => ClinicalNotesScreen(),
+//                             ),
+//                           );
+//                         },
+//                         child: const Text('View'),
+//                       ),
+//                     );
+//                   },
+//                 );
+//               },
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _buildFeedbackSection(BuildContext context, String patientId) {
+//     return Card(
+//       margin: const EdgeInsets.symmetric(horizontal: 16),
+//       elevation: 4,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text(
+//               'Patient Feedback',
+//               style: TextStyle(
+//                 fontSize: 18,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//             const Divider(),
+//             StreamBuilder<QuerySnapshot>(
+//               stream: FirebaseFirestore.instance
+//                   .collection('users')
+//                   .doc(patientId)
+//                   .collection('feedback')
+//                   .orderBy('timestamp', descending: true)
+//                   .snapshots(),
+//               builder: (context, snapshot) {
+//                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+//                   return const Text('No feedback available.');
+//                 }
+//                 return Column(
+//                   children: snapshot.data!.docs.map((doc) {
+//                     var feedbackData = doc.data() as Map<String, dynamic>;
+//                     return ListTile(
+//                       title: Text(feedbackData['feedback'] ?? 'No feedback'),
+//                       subtitle: Text(feedbackData['timestamp'].toDate().toString()),
+//                     );
+//                   }).toList(),
+//                 );
+//               },
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+//
+//
+// class ClinicalNotesScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Clinical Notes'),
+//         backgroundColor: Colors.teal,
+//       ),
+//       body: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text(
+//               'Patient: Rana Ayub',
+//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//             ),
+//             const SizedBox(height: 8),
+//             const Text('Date: 10/10/24'),
+//             const Divider(height: 24),
+//             const Text(
+//               'Diagnosis: Social Anxiety Disorder',
+//               style: TextStyle(fontWeight: FontWeight.bold),
+//             ),
+//             const Text(
+//                 'Subjective: Patient reports significant anxiety (8/10) in social situations, avoiding gatherings due to fear of judgment.'),
+//             const SizedBox(height: 16),
+//             const Text(
+//               'Objective: Appears anxious, minimal eye contact. Logical thought process.',
+//             ),
+//             const Text(
+//               'Assessment: Social Anxiety Disorder, moderate severity. Avoidance behaviors persist.',
+//             ),
+//             const SizedBox(height: 16),
+//             const Text(
+//               'Plan:',
+//               style: TextStyle(fontWeight: FontWeight.bold),
+//             ),
+//             const Text('1. Continue CBT focusing on exposure techniques.'),
+//             const Text('2. Consider starting SSRIs.'),
+//             const Text('3. Follow up in 4 weeks.'),
+//             const Spacer(),
+//             ElevatedButton(
+//               onPressed: () {
+//                 // Action for adding new clinical notes
+//               },
+//               child: const Text('Add Notes'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+//
+//
 
-  const PatientDetails({Key? key, required this.patientId}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Patient Details'),
-        backgroundColor: Colors.teal,
-        elevation: 0,
-      ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(patientId).get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Patient data not found.'));
-          }
-
-          final patientData = snapshot.data!.data() as Map<String, dynamic>;
-
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeaderSection(patientData),
-                const SizedBox(height: 20),
-                _buildInfoSection(patientData),
-                const SizedBox(height: 20),
-                _buildFeedbackSection(context, patientId),
-                const SizedBox(height: 20),
-                _buildRecentVisitsSection(context, patientId),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildHeaderSection(Map<String, dynamic> patientData) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      color: Colors.teal,
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundImage: AssetImage('assets/images/patient1.jpg'),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                patientData['name'] ?? 'Unknown',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Age: ${patientData['age'] ?? 'N/A'}, ${patientData['gender'] ?? 'N/A'}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Occupation: ${patientData['occupation'] ?? 'N/A'}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoSection(Map<String, dynamic> patientData) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Patient Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Divider(),
-            _buildInfoRow('First Name', patientData['firstName'] ?? 'N/A'),
-            _buildInfoRow('Last Name', patientData['lastName'] ?? 'N/A'),
-            _buildInfoRow('Email', patientData['email'] ?? 'N/A'),
-            _buildInfoRow('Contact', patientData['contact'] ?? 'N/A'),
-            _buildInfoRow('Date of Birth', patientData['dob'] ?? 'N/A'),
-            _buildInfoRow('Marital Status', patientData['maritalStatus'] ?? 'N/A'),
-            _buildInfoRow('Previous Medication', patientData['previousMedication'] ?? 'N/A'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentVisitsSection(BuildContext context, String patientId) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Recent Visits',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Divider(),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(patientId)
-                  .collection('appointments')
-                  .orderBy('date', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No recent visits found.'));
-                }
-
-                final visits = snapshot.data!.docs;
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: visits.length,
-                  itemBuilder: (context, index) {
-                    var visitData = visits[index].data() as Map<String, dynamic>;
-                    return ListTile(
-                      leading: const Icon(Icons.calendar_today, color: Colors.teal),
-                      title: Text(visitData['date'] ?? 'Unknown Date'),
-                      subtitle: Text(visitData['summary'] ?? 'No details available'),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ClinicalNotesScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('View'),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeedbackSection(BuildContext context, String patientId) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Patient Feedback',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Divider(),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(patientId)
-                  .collection('feedback')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Text('No feedback available.');
-                }
-                return Column(
-                  children: snapshot.data!.docs.map((doc) {
-                    var feedbackData = doc.data() as Map<String, dynamic>;
-                    return ListTile(
-                      title: Text(feedbackData['feedback'] ?? 'No feedback'),
-                      subtitle: Text(feedbackData['timestamp'].toDate().toString()),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class ClinicalNotesScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Clinical Notes'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Patient: Rana Ayub',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text('Date: 10/10/24'),
-            const Divider(height: 24),
-            const Text(
-              'Diagnosis: Social Anxiety Disorder',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Text(
-                'Subjective: Patient reports significant anxiety (8/10) in social situations, avoiding gatherings due to fear of judgment.'),
-            const SizedBox(height: 16),
-            const Text(
-              'Objective: Appears anxious, minimal eye contact. Logical thought process.',
-            ),
-            const Text(
-              'Assessment: Social Anxiety Disorder, moderate severity. Avoidance behaviors persist.',
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Plan:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Text('1. Continue CBT focusing on exposure techniques.'),
-            const Text('2. Consider starting SSRIs.'),
-            const Text('3. Follow up in 4 weeks.'),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // Action for adding new clinical notes
-              },
-              child: const Text('Add Notes'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-
-
-
+///fsafdsa
 // class DoctorDashboard extends StatelessWidget {
 //   @override
 //   Widget build(BuildContext context) {

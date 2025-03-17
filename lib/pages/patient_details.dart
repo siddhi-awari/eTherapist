@@ -12,7 +12,7 @@ class PatientDetails extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Patient Details'),
-        backgroundColor: Colors.teal,
+        backgroundColor: Color(0xFF078798),
         elevation: 0,
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -49,7 +49,7 @@ class PatientDetails extends StatelessWidget {
   Widget _buildHeaderSection(Map<String, dynamic> patientData) {
     return Container(
       padding: const EdgeInsets.all(16.0),
-      color: Colors.teal,
+      color: Color(0xFF078798),
       child: Row(
         children: [
           const CircleAvatar(
@@ -113,7 +113,7 @@ class PatientDetails extends StatelessWidget {
             _buildInfoRow('Last Name', patientData['lastName'] ?? 'N/A'),
             _buildInfoRow('Email', patientData['email'] ?? 'N/A'),
             _buildInfoRow('Contact', patientData['contact'] ?? 'N/A'),
-            _buildInfoRow('Date of Birth', patientData['dob'] ?? 'N/A'),
+            // _buildInfoRow('Date of Birth', patientData['dob'] ?? 'N/A'),
             _buildInfoRow('Marital Status', patientData['maritalStatus'] ?? 'N/A'),
             _buildInfoRow('Previous Medication', patientData['previousMedication'] ?? 'N/A'),
           ],
@@ -360,7 +360,7 @@ class ClinicalNotesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clinical Notes')),
+      appBar: AppBar(title: const Text('Clinical Notes',style: TextStyle(color: Colors.white)),backgroundColor:  Color(0xFF078798),),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -382,27 +382,30 @@ class ClinicalNotesScreen extends StatelessWidget {
             itemCount: notes.length,
             itemBuilder: (context, index) {
               var noteData = notes[index].data() as Map<String, dynamic>;
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: notes.map((doc) {
+                    var noteData = doc.data() as Map<String, dynamic>;
 
-              return Card(
-                margin: const EdgeInsets.all(12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Objective:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(noteData['objective'] ?? 'No data'),
-                      const SizedBox(height: 8),
-                      const Text('Assessment:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(noteData['assessment'] ?? 'No data'),
-                      const SizedBox(height: 8),
-                      const Text('Plan:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text(noteData['plan'] ?? 'No data'),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle('Objective'),
+                          _buildSectionContent(noteData['objective']),
+                          const SizedBox(height: 10),
+                          _buildSectionTitle('Assessment'),
+                          _buildSectionContent(noteData['assessment']),
+                          const SizedBox(height: 10),
+                          _buildSectionTitle('Plan'),
+                          _buildSectionContent(noteData['plan']),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               );
             },
@@ -411,4 +414,28 @@ class ClinicalNotesScreen extends StatelessWidget {
       ),
     );
   }
+}
+Widget _buildSectionTitle(String title) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 4.0),
+    child: Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF078798),
+      ),
+    ),
+  );
+}
+
+Widget _buildSectionContent(String? content) {
+  return Text(
+    content ?? 'No data available',
+    style: const TextStyle(
+      fontSize: 16,
+      color: Colors.black87,
+      height: 1.5, // This adds line height to make the text easier to read
+    ),
+  );
 }

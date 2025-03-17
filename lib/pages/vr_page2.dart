@@ -1,12 +1,12 @@
 import 'package:app/pages/after_session.dart';
 import 'package:flutter/material.dart';
 
-class VrPage extends StatefulWidget {
+class VrPage2 extends StatefulWidget {
   @override
-  State<VrPage> createState() => _VrPageState();
+  State<VrPage2> createState() => _VrPageState2();
 }
 
-class _VrPageState extends State<VrPage> {
+class _VrPageState2 extends State<VrPage2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,7 +18,7 @@ class _VrPageState extends State<VrPage> {
             height: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('lib/images/interview.jpg'),
+                image: AssetImage('lib/images/public.jpg'),
                 fit: BoxFit.cover,
               ),
             ),

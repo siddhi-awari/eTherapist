@@ -170,69 +170,69 @@ class _EditPageState extends State<EditPage> {
             children: [
               TextField(
                 controller: _firstNameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'First Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _lastNameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Last Name',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _contactController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Contact',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               GestureDetector(
                 onTap: () => _selectDateOfBirth(context),
                 child: AbsorbPointer(
                   child: TextField(
                     controller: _dobController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Date of Birth',
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _ageController,
                 readOnly: true,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Age',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _maritalStatusController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Marital Status',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _occupationController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Occupation',
                   border: OutlineInputBorder(),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _gender,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Gender',
                   border: OutlineInputBorder(),
                 ),
@@ -248,10 +248,10 @@ class _EditPageState extends State<EditPage> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _previousMedication,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Previous Medication',
                   border: OutlineInputBorder(),
                 ),
@@ -271,23 +271,23 @@ class _EditPageState extends State<EditPage> {
                 }).toList(),
               ),
               if (_previousMedication == 'Yes') ...[
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _selectPDF,
-                  child: Text('Upload PDF'),
+                  child: const Text('Upload PDF'),
                 ),
                 if (_pdfFile != null) Text('PDF selected: ${_pdfFile!.path.split('/').last}')
               ],
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
                   if (_userId == null) {
                     await _signUpUser(); // Create a new user if not already logged in
                   }
                   await _updateUserProfile(); // Update profile with new data
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User profile updated')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User profile updated')));
                 },
-                child: Text('Update Profile'),
+                child: const Text('Update Profile'),
               ),
             ],
           ),

@@ -1,13 +1,14 @@
 import 'package:app/pages/vr_page.dart';
+import 'package:app/pages/vr_page2.dart';
 import 'package:app/util/my_button.dart';
 import 'package:flutter/material.dart';
 
-class consentPage extends StatefulWidget {
+class consentPage2 extends StatefulWidget {
   @override
-  State<consentPage> createState() => consentPageState();
+  State<consentPage2> createState() => consentPageState2();
 }
 
-class consentPageState extends State<consentPage> {
+class consentPageState2 extends State<consentPage2> {
   bool _isChecked = false; // Checkbox initial state
 
   void _submitConsent() {
@@ -15,7 +16,7 @@ class consentPageState extends State<consentPage> {
     if (_isChecked) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => VrPage()), // NextPage() is the target screen
+        MaterialPageRoute(builder: (context) => VrPage2()), // NextPage() is the target screen
       );
     } else {
       // Show an alert or a message that the user needs to agree

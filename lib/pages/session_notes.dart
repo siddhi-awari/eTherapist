@@ -9,7 +9,10 @@ class PatientVisitsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('')),
+      appBar: AppBar(
+        title: const Text('Session Notes'),
+        backgroundColor: const Color(0xFF078798),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -34,20 +37,24 @@ class PatientVisitsScreen extends StatelessWidget {
               String visitId = visits[index].id;
 
               return Card(
-                margin: const EdgeInsets.all(10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                margin: const EdgeInsets.all(12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                elevation: 5,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         visitData['date'] ?? 'Unknown Date',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF078798),
+                        ),
                       ),
-                      const SizedBox(height: 5),
-                      Text(visitData['summary'] ?? 'No details available'),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
+
                       FutureBuilder<QuerySnapshot>(
                         future: FirebaseFirestore.instance
                             .collection('users')
@@ -61,7 +68,7 @@ class PatientVisitsScreen extends StatelessWidget {
                           return Align(
                             alignment: Alignment.centerRight,
                             child: hasNotes
-                                ? ElevatedButton(
+                                ? ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -73,7 +80,13 @@ class PatientVisitsScreen extends StatelessWidget {
                                   ),
                                 );
                               },
-                              child: const Text('View Notes'),
+                              icon: const Icon(Icons.note, color: Colors.white,),
+                              label: const Text('View Notes'),
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF078798), // Use backgroundColor instead of primary
+                                  foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
                             )
                                 : const Text('No Notes Available', style: TextStyle(color: Colors.grey)),
                           );
@@ -91,6 +104,7 @@ class PatientVisitsScreen extends StatelessWidget {
   }
 }
 
+
 class VisitNotesScreen extends StatelessWidget {
   final String patientId;
   final String visitId;
@@ -100,7 +114,10 @@ class VisitNotesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Visit Notes')),
+      appBar: AppBar(
+        title: const Text('Clinical Note'),
+        backgroundColor: const Color(0xFF078798),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -118,32 +135,60 @@ class VisitNotesScreen extends StatelessWidget {
 
           final notes = snapshot.data!.docs;
 
-          return ListView.builder(
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              var noteData = notes[index].data() as Map<String, dynamic>;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: notes.map((doc) {
+                var noteData = doc.data() as Map<String, dynamic>;
 
-              return Card(
-                margin: const EdgeInsets.all(10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Objective: ${noteData['objective']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      Text('Assessment: ${noteData['assessment']}'),
-                      const SizedBox(height: 5),
-                      Text('Plan: ${noteData['plan']}'),
+                      _buildSectionTitle('Objective'),
+                      _buildSectionContent(noteData['objective']),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Assessment'),
+                      _buildSectionContent(noteData['assessment']),
+                      const SizedBox(height: 10),
+                      _buildSectionTitle('Plan'),
+                      _buildSectionContent(noteData['plan']),
                     ],
                   ),
-                ),
-              );
-            },
+                );
+              }).toList(),
+            ),
           );
         },
       ),
     );
   }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF078798),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionContent(String? content) {
+    return Text(
+      content ?? 'No data available',
+      style: const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+        height: 1.5, // This adds line height to make the text easier to read
+      ),
+    );
+  }
 }
+

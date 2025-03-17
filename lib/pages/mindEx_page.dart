@@ -37,7 +37,7 @@ class _MindExPageState extends State<MindExPage> {
           child: Column(
             children: <Widget>[
               // Title Section
-              Align(
+              const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
                   'Mind Exercises',
@@ -49,7 +49,7 @@ class _MindExPageState extends State<MindExPage> {
                   ),
                 ),
               ),
-              Align(
+              const Align(
                 alignment: Alignment.topLeft,
                 child: Text(
                   'Simple exercises to ease your anxiety.',
@@ -60,12 +60,12 @@ class _MindExPageState extends State<MindExPage> {
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Images Section (Grid View)
               Expanded(
                 child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16.0,
                     mainAxisSpacing: 16.0,
@@ -90,7 +90,7 @@ class _MindExPageState extends State<MindExPage> {
                             height: 125,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: Color.fromRGBO(6, 1, 62, 1),
+                                color: const Color.fromRGBO(6, 1, 62, 1),
                                 width: 1,
                               ),
                               borderRadius: BorderRadius.circular(27),
@@ -100,11 +100,11 @@ class _MindExPageState extends State<MindExPage> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           // Exercise Name (Caption)
                           Text(
                             exercises[index]['name']!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Color.fromRGBO(6, 1, 63, 1),
                               fontFamily: 'Inter',
                               fontSize: 16,

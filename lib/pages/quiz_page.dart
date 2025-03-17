@@ -44,7 +44,10 @@ class _QuizPageState extends State<QuizPage> {
 
   Future<void> submitResponses() async {
     // final Uri url = Uri.parse("http://192.168.0.104:6000/predict");
-    final Uri url = Uri.parse("http://10.0.2.2:6000/predict");
+    // final Uri url = Uri.parse("http://10.0.2.2:6000/predict");
+    // final Uri url = Uri.parse("http://192.168.0.101:6000/predict");
+
+    final Uri url = Uri.parse("http://192.168.198.254:6000/predict");
 
     try {
       final response = await http.post(
