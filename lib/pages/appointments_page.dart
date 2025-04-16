@@ -273,7 +273,6 @@ class _AppPageState extends State<AppPage> {
       ),
     );
   }
-
   void _confirmReschedule(Appointment oldAppointment, DateTime newDate, String newTime) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -289,15 +288,21 @@ class _AppPageState extends State<AppPage> {
           .get();
       String assignedDoctorId = userDoc['assignedDoctorId'];
 
-      // 1. Add old appointment back to available slots
-      await FirebaseFirestore.instance
+      // 1. Check if the selected slot is still available
+      QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(assignedDoctorId)
           .collection('slots')
-          .add({
-        'date': oldFormattedDate,
-        'time': oldAppointment.time,
-      });
+          .where('date', isEqualTo: newFormattedDate)
+          .where('time', isEqualTo: newTime)
+          .get();
+
+      if (slotSnapshot.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Selected time slot is no longer available.')),
+        );
+        return;
+      }
 
       // 2. Remove old appointment from user's booked appointments
       QuerySnapshot oldSnapshot = await FirebaseFirestore.instance
@@ -312,7 +317,17 @@ class _AppPageState extends State<AppPage> {
         await doc.reference.delete();
       }
 
-      // 3. Add new appointment to user's booked appointments
+      // 3. Add old appointment back to available slots
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(assignedDoctorId)
+          .collection('slots')
+          .add({
+        'date': oldFormattedDate,
+        'time': oldAppointment.time,
+      });
+
+      // 4. Add new appointment to user's booked appointments
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -323,28 +338,98 @@ class _AppPageState extends State<AppPage> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // 4. Remove new appointment from available slots
-      QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(assignedDoctorId)
-          .collection('slots')
-          .where('date', isEqualTo: newFormattedDate)
-          .where('time', isEqualTo: newTime)
-          .get();
-
+      // 5. Remove new appointment from available slots
       for (var doc in slotSnapshot.docs) {
         await doc.reference.delete();
       }
 
+      // 6. Refresh UI
+      _fetchAppointments();
+      _fetchAvailableSlots();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment rescheduled successfully!')),
+      );
+
       Navigator.pop(context); // Close dialog
-      _fetchAppointments(); // Refresh list
-      _fetchAvailableSlots(); // Refresh slots
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Reschedule failed: $e')),
       );
     }
   }
+
+  // void _confirmReschedule(Appointment oldAppointment, DateTime newDate, String newTime) async {
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return;
+  //
+  //   String oldFormattedDate = oldAppointment.date.toString().split(' ')[0];
+  //   String newFormattedDate = newDate.toString().split(' ')[0];
+  //
+  //   try {
+  //     // Fetch assigned doctor ID
+  //     DocumentSnapshot userDoc = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .get();
+  //     String assignedDoctorId = userDoc['assignedDoctorId'];
+  //
+  //     // 1. Add old appointment back to available slots
+  //     await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(assignedDoctorId)
+  //         .collection('slots')
+  //         .add({
+  //       'date': oldFormattedDate,
+  //       'time': oldAppointment.time,
+  //     });
+  //
+  //     // 2. Remove old appointment from user's booked appointments
+  //     QuerySnapshot oldSnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .collection('appointments')
+  //         .where('date', isEqualTo: oldFormattedDate)
+  //         .where('time', isEqualTo: oldAppointment.time)
+  //         .get();
+  //
+  //     for (var doc in oldSnapshot.docs) {
+  //       await doc.reference.delete();
+  //     }
+  //
+  //     // 3. Add new appointment to user's booked appointments
+  //     await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .collection('appointments')
+  //         .add({
+  //       'date': newFormattedDate,
+  //       'time': newTime,
+  //       'timestamp': FieldValue.serverTimestamp(),
+  //     });
+  //
+  //     // 4. Remove new appointment from available slots
+  //     QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(assignedDoctorId)
+  //         .collection('slots')
+  //         .where('date', isEqualTo: newFormattedDate)
+  //         .where('time', isEqualTo: newTime)
+  //         .get();
+  //
+  //     for (var doc in slotSnapshot.docs) {
+  //       await doc.reference.delete();
+  //     }
+  //
+  //     Navigator.pop(context); // Close dialog
+  //     _fetchAppointments(); // Refresh list
+  //     _fetchAvailableSlots(); // Refresh slots
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Reschedule failed: $e')),
+  //     );
+  //   }
+  // }
 
 }
 

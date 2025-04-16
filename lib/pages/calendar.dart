@@ -98,21 +98,23 @@ class _CalendarPageState extends State<CalendarPage> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null || _selectedDate == null) return;
 
-    // Ensure YYYY-MM-DD format
+    // Ensure the date format is "YYYY-M-D" (matching Firestore)
     String formattedDate =
-        "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
+        "${_selectedDate!.year}-${_selectedDate!.month}-${_selectedDate!.day}";  // This gives "2025-4-5"
 
     try {
+      // Add appointment to the user's appointments collection
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('appointments')
           .add({
-        'date': formattedDate, // Ensures YYYY-MM-DD format
+        'date': formattedDate, // Ensures YYYY-M-D format
         'time': appointment.time,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      // Get the assigned doctor's ID
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -120,20 +122,29 @@ class _CalendarPageState extends State<CalendarPage> {
 
       String assignedDoctorId = userDoc['assignedDoctorId'];
 
+      // Find the slot in the doctor's collection
       QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(assignedDoctorId)
           .collection('slots')
-          .where('date', isEqualTo: formattedDate) // YYYY-MM-DD format
-          .where('time', isEqualTo: appointment.time)
+          .where('date', isEqualTo: formattedDate) // Ensure YYYY-M-D format
+          .where('time', isEqualTo: appointment.time) // Time should match exactly
           .get();
 
-      for (var doc in slotSnapshot.docs) {
-        await doc.reference.delete();
+      // If the slot is found, remove it
+      if (slotSnapshot.docs.isNotEmpty) {
+        for (var doc in slotSnapshot.docs) {
+          await doc.reference.delete();
+          print("Slot removed from doctor's available slots.");
+        }
+      } else {
+        print("No matching slot found for doctor.");
       }
 
+      // Fetch available slots again to update the UI
       _fetchAvailableSlots();
 
+      // Close the booking screen and show confirmation
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -142,11 +153,67 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
       );
     } catch (e) {
+      // Show error message if appointment booking fails
+      print("Error booking appointment: $e"); // More detailed error logs
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to book appointment: $e')),
       );
     }
   }
+
+  // Future<void> _bookAppointment(Appointment appointment) async {
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //   if (user == null || _selectedDate == null) return;
+  //
+  //   // Ensure YYYY-MM-DD format
+  //   String formattedDate =
+  //       "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}";
+  //
+  //   try {
+  //     await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .collection('appointments')
+  //         .add({
+  //       'date': formattedDate, // Ensures YYYY-MM-DD format
+  //       'time': appointment.time,
+  //       'timestamp': FieldValue.serverTimestamp(),
+  //     });
+  //
+  //     DocumentSnapshot userDoc = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .get();
+  //
+  //     String assignedDoctorId = userDoc['assignedDoctorId'];
+  //
+  //     QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(assignedDoctorId)
+  //         .collection('slots')
+  //         .where('date', isEqualTo: formattedDate) // YYYY-MM-DD format
+  //         .where('time', isEqualTo: appointment.time)
+  //         .get();
+  //
+  //     for (var doc in slotSnapshot.docs) {
+  //       await doc.reference.delete();
+  //     }
+  //
+  //     _fetchAvailableSlots();
+  //
+  //     Navigator.pop(context);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Appointment booked for ${appointment.time}'),
+  //         backgroundColor: Color(0xFF078798),
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to book appointment: $e')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

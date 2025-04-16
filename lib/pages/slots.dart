@@ -26,6 +26,49 @@ class _SlotsPageState extends State<Slots> {
   }
 
   // Fetch available slots from the current user's 'slots' collection
+  // Future<void> _fetchAvailableSlots() async {
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return;
+  //
+  //   QuerySnapshot slotSnapshot = await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(user.uid)
+  //       .collection('slots')
+  //       .get();
+  //
+  //   if (slotSnapshot.docs.isEmpty) {
+  //     print("No slots found for user: ${user.uid}");
+  //   }
+  //
+  //   Map<DateTime, List<Appointment>> tempAppointments = {};
+  //
+  //   for (var doc in slotSnapshot.docs) {
+  //     if (doc.data() is Map<String, dynamic>) {
+  //       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  //
+  //       if (data.containsKey('timestamp') && data.containsKey('time')) {
+  //         Timestamp timestamp = data['timestamp'];
+  //         String time = data['time'];
+  //
+  //         DateTime date = timestamp.toDate();
+  //         DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+  //
+  //         if (!tempAppointments.containsKey(normalizedDate)) {
+  //           tempAppointments[normalizedDate] = [];
+  //         }
+  //         tempAppointments[normalizedDate]!.add(Appointment(time: time));
+  //       } else {
+  //         print("Invalid slot document: $doc");
+  //       }
+  //     }
+  //   }
+  //
+  //   setState(() {
+  //     availableAppointments = tempAppointments;
+  //   });
+  //
+  //   print("Available slots: $availableAppointments");
+  // }
   Future<void> _fetchAvailableSlots() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -46,17 +89,29 @@ class _SlotsPageState extends State<Slots> {
       if (doc.data() is Map<String, dynamic>) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-        if (data.containsKey('timestamp') && data.containsKey('time')) {
-          Timestamp timestamp = data['timestamp'];
-          String time = data['time'];
+        if (data.containsKey('date') && data.containsKey('time')) {
+          String dateString = data['date'];  // Format: "YYYY-MM-DD"
+          String timeString = data['time'];  // Format: "HH:mm"
 
-          DateTime date = timestamp.toDate();
-          DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+          // Parse the date string into a DateTime object
+          List<String> dateParts = dateString.split('-');
+          if (dateParts.length == 3) {
+            int year = int.parse(dateParts[0]);
+            int month = int.parse(dateParts[1]);
+            int day = int.parse(dateParts[2]);
+            DateTime date = DateTime(year, month, day);
 
-          if (!tempAppointments.containsKey(normalizedDate)) {
-            tempAppointments[normalizedDate] = [];
+            // Normalize the date to remove time
+            DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+
+            // Add the time to the appointment list
+            if (!tempAppointments.containsKey(normalizedDate)) {
+              tempAppointments[normalizedDate] = [];
+            }
+
+            // Add the appointment with the time
+            tempAppointments[normalizedDate]!.add(Appointment(time: timeString));
           }
-          tempAppointments[normalizedDate]!.add(Appointment(time: time));
         } else {
           print("Invalid slot document: $doc");
         }
@@ -78,6 +133,7 @@ class _SlotsPageState extends State<Slots> {
     DateTime? selectedDate;
     TimeOfDay? selectedTime;
 
+    // Show the date picker
     await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -86,6 +142,8 @@ class _SlotsPageState extends State<Slots> {
     ).then((date) async {
       if (date != null) {
         selectedDate = date;
+
+        // Show the time picker
         await showTimePicker(
           context: context,
           initialTime: TimeOfDay.now(),
@@ -97,30 +155,81 @@ class _SlotsPageState extends State<Slots> {
       }
     });
 
+    // If both date and time are selected, proceed
     if (selectedDate != null && selectedTime != null) {
-      DateTime appointmentDateTime = DateTime(
-        selectedDate!.year,
-        selectedDate!.month,
-        selectedDate!.day,
-        selectedTime!.hour,
-        selectedTime!.minute,
-      );
+      // Format the selected date as a string "YYYY-MM-DD"
+      String formattedDate = "${selectedDate?.year}-${selectedDate?.month}-${selectedDate?.day}";
 
+      // Format the selected time as a string "HH:mm"
+      String formattedTime = "${selectedTime?.hour}:${selectedTime?.minute}";
+
+      // Save the data in Firestore with formatted date and time
       FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('slots')
           .add({
-        'timestamp': Timestamp.fromDate(appointmentDateTime),
-        'time': "${selectedTime!.hour}:${selectedTime!.minute}",
+        'date': formattedDate,
+        'time': formattedTime,
       });
 
-      print("Slot Added: $appointmentDateTime");
+      print("Slot Added: $formattedDate $formattedTime");
 
       // Fetch available slots again after adding a new slot
       _fetchAvailableSlots();
     }
   }
+
+  // void _addSlot() async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return;
+  //
+  //   DateTime? selectedDate;
+  //   TimeOfDay? selectedTime;
+  //
+  //   await showDatePicker(
+  //     context: context,
+  //     initialDate: DateTime.now(),
+  //     firstDate: DateTime.now(),
+  //     lastDate: DateTime(2030),
+  //   ).then((date) async {
+  //     if (date != null) {
+  //       selectedDate = date;
+  //       await showTimePicker(
+  //         context: context,
+  //         initialTime: TimeOfDay.now(),
+  //       ).then((time) {
+  //         if (time != null) {
+  //           selectedTime = time;
+  //         }
+  //       });
+  //     }
+  //   });
+  //
+  //   if (selectedDate != null && selectedTime != null) {
+  //     DateTime appointmentDateTime = DateTime(
+  //       selectedDate!.year,
+  //       selectedDate!.month,
+  //       selectedDate!.day,
+  //       selectedTime!.hour,
+  //       selectedTime!.minute,
+  //     );
+  //
+  //     FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .collection('slots')
+  //         .add({
+  //       'timestamp': Timestamp.fromDate(appointmentDateTime),
+  //       'time': "${selectedTime!.hour}:${selectedTime!.minute}",
+  //     });
+  //
+  //     print("Slot Added: $appointmentDateTime");
+  //
+  //     // Fetch available slots again after adding a new slot
+  //     _fetchAvailableSlots();
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

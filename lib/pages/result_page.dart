@@ -6,6 +6,7 @@ import 'appointments_page.dart';
 import 'mindEx_page.dart';
 import 'mindEx_page2.dart';
 
+
 class ResultPage extends StatelessWidget {
   final String anxietyLevel;
 
@@ -48,7 +49,6 @@ class ResultPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Title
             const Text(
               "Your Anxiety Level",
               style: TextStyle(
@@ -58,8 +58,6 @@ class ResultPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-
-            // Anxiety Level Display
             Text(
               anxietyLevel,
               style: const TextStyle(
@@ -69,9 +67,6 @@ class ResultPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Therapy Recommendations Title
-            // Therapy Recommendations Title
             const Text(
               "Recommended Therapies",
               style: TextStyle(
@@ -81,8 +76,6 @@ class ResultPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-
-// List of Recommendations
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 60.0),
               child: Column(
@@ -110,10 +103,7 @@ class ResultPage extends StatelessWidget {
                 }).toList(),
               ),
             ),
-
             const SizedBox(height: 30),
-
-            // Buttons
             Row(
               children: [
                 Expanded(
@@ -164,6 +154,175 @@ class ResultPage extends StatelessWidget {
   }
 }
 
+
+
+
+// import 'package:app/pages/therapy_page.dart';
+// import 'package:app/pages/therapy_page2.dart';
+// import 'package:flutter/material.dart';
+//
+// import 'appointments_page.dart';
+// import 'mindEx_page.dart';
+// import 'mindEx_page2.dart';
+//
+// class ResultPage extends StatelessWidget {
+//   final String anxietyLevel;
+//
+//   const ResultPage({super.key, required this.anxietyLevel});
+//
+//   List<String> getOptions(String level) {
+//     switch (level.toLowerCase()) {
+//       case 'mild':
+//         return ['Breathing Exercises', 'Meditation', 'Relaxation Exercises'];
+//       case 'moderate':
+//         return ['Meditation', 'Relaxation Exercises', 'VR Sessions'];
+//       case 'severe':
+//         return ['Relaxation Exercises', 'VR Sessions', 'Professional Sessions'];
+//       default:
+//         return ['Breathing Exercises', 'Meditation', 'Relaxation Exercises'];
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final options = getOptions(anxietyLevel);
+//
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text("RESULT", style: TextStyle(color: Colors.white)),
+//         backgroundColor: const Color(0xFF078798),
+//         elevation: 0,
+//         iconTheme: const IconThemeData(color: Colors.white),
+//       ),
+//       body: Container(
+//         width: double.infinity,
+//         padding: const EdgeInsets.symmetric(horizontal: 20.0),
+//         decoration: const BoxDecoration(
+//           gradient: LinearGradient(
+//             colors: [Color(0xFFE0F7FA), Color(0xFFB2EBF2)],
+//             begin: Alignment.topCenter,
+//             end: Alignment.bottomCenter,
+//           ),
+//         ),
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             // Title
+//             const Text(
+//               "Your Anxiety Level",
+//               style: TextStyle(
+//                 fontSize: 30,
+//                 fontWeight: FontWeight.bold,
+//                 color: Color(0xFF027373),
+//               ),
+//             ),
+//             const SizedBox(height: 10),
+//
+//             // Anxiety Level Display
+//             Text(
+//               anxietyLevel,
+//               style: const TextStyle(
+//                 fontSize: 42,
+//                 fontWeight: FontWeight.bold,
+//                 color: Colors.redAccent,
+//               ),
+//             ),
+//             const SizedBox(height: 20),
+//
+//             // Therapy Recommendations Title
+//             // Therapy Recommendations Title
+//             const Text(
+//               "Recommended Therapies",
+//               style: TextStyle(
+//                 fontSize: 24,
+//                 fontWeight: FontWeight.bold,
+//                 color: Color(0xFF078798),
+//               ),
+//             ),
+//             const SizedBox(height: 12),
+//
+// // List of Recommendations
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 60.0),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: options.map((option) {
+//                   return Padding(
+//                     padding: const EdgeInsets.symmetric(vertical: 6.0),
+//                     child: Row(
+//                       children: [
+//                         Icon(Icons.check_circle, color: Color(0xFF27B6BF), size: 22),
+//                         const SizedBox(width: 10),
+//                         Expanded(
+//                           child: Text(
+//                             option,
+//                             style: const TextStyle(
+//                               fontSize: 18,
+//                               fontWeight: FontWeight.w500,
+//                               color: Colors.black87,
+//                             ),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   );
+//                 }).toList(),
+//               ),
+//             ),
+//
+//             const SizedBox(height: 30),
+//
+//             // Buttons
+//             Row(
+//               children: [
+//                 Expanded(
+//                   child: ElevatedButton(
+//                     onPressed: () {
+//                       Navigator.push(
+//                         context,
+//                         MaterialPageRoute(builder: (context) => MindExPage2()),
+//                       );
+//                     },
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: const Color(0xFF027373),
+//                       foregroundColor: Colors.white,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(30),
+//                       ),
+//                       elevation: 5,
+//                     ),
+//                     child: const Text("Exercises", style: TextStyle(fontSize: 16)),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 10),
+//                 Expanded(
+//                   child: ElevatedButton(
+//                     onPressed: () {
+//                       Navigator.push(
+//                         context,
+//                         MaterialPageRoute(builder: (context) => TherapyPage2()),
+//                       );
+//                     },
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: const Color(0xFF027373),
+//                       foregroundColor: Colors.white,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(30),
+//                       ),
+//                       elevation: 5,
+//                     ),
+//                     child: const Text("Book Session", style: TextStyle(fontSize: 16)),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+//
 
 // import 'package:flutter/material.dart';
 //

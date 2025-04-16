@@ -16,7 +16,7 @@ class consentPageState2 extends State<consentPage2> {
     if (_isChecked) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => VrPage2()), // NextPage() is the target screen
+        MaterialPageRoute(builder: (context) => WebViewScreen2()), // NextPage() is the target screen
       );
     } else {
       // Show an alert or a message that the user needs to agree

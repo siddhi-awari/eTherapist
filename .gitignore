@@ -1,3 +1,18 @@
+# Firebase service account keys (NEVER commit this)
+serviceAccountKey.json
+firebase-adminsdk.json
+*.firebase.json
+
+# Firebase emulator files
+.firebase/
+firestore.indexes.json
+firestore.rules
+storage.rules
+
+# Environment variables
+.env
+.env.*
+
 # Miscellaneous
 *.class
 *.log

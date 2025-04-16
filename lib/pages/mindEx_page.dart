@@ -4,12 +4,12 @@ import 'package:app/pages/video_page.dart';
 class MindExPage extends StatefulWidget {
   @override
   State<MindExPage> createState() => _MindExPageState();
-}
+} 
 
 class _MindExPageState extends State<MindExPage> {
   final List<Map<String, String>> exercises = [
     {'name': 'Meditation', 'image': 'lib/images/Image.png', 'videoId': 'uqGTphrGHi4'},
-    {'name': 'Visualization', 'image': 'lib/images/Image (1).png', 'videoId': '24ngiApesiM'},
+    {'name': 'Visualization', 'image': 'lib/images/Image (1).png', 'videoId': 't1rRo6cgM_E'},
     {'name': 'Yoga', 'image': 'lib/images/Image (3).png', 'videoId': 'Ycyz2C0bNUg'},
     {'name': 'Slow Breaths', 'image': 'lib/images/Image (4).png', 'videoId': '8vkYJf8DOsc'},
     {'name': 'Moderate Exercise', 'image': 'lib/images/Image (5).png', 'videoId': 't3uK039WdaM'},
