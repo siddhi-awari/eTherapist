@@ -9,7 +9,7 @@ firestore.indexes.json
 firestore.rules
 storage.rules
 
-# Environment variables
+# Environment variablesflutter build apk --release
 .env
 .env.*
 

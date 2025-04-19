@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'after_session.dart';
+
 class WebViewScreen2 extends StatefulWidget {
   @override
   _WebViewScreen2State createState() => _WebViewScreen2State();
@@ -140,6 +142,10 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
             child: Center(
               child: ElevatedButton(
                 onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AfterSession()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
